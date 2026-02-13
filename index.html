@@ -56,7 +56,7 @@
 
     <!-- Header -->
     <header class="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold dynamic-text flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 5h18v14H3z"></path><path d="M12 5v14"></path><path d="M9 11v2"></path><path d="M15 11v2"></path>
@@ -65,52 +65,82 @@
             </h1>
             <div class="flex items-center gap-2">
                 <div id="loading-spinner" class="loader hidden"></div>
-                <button onclick="generateDailyOutfit()" class="dynamic-button text-white px-5 py-2 rounded-full font-medium shadow-lg transition">
+                <button onclick="generateDailyOutfit()" class="dynamic-button text-white px-5 py-2 rounded-full font-medium shadow-lg transition text-sm">
                     ✨ 今日穿搭
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 mt-6">
+    <main class="max-w-5xl mx-auto px-4 mt-6">
         
-        <!-- 天氣區塊 -->
-        <section id="weather-widget" class="mb-8 glass-panel rounded-2xl p-6 card-shadow">
-            <div class="flex flex-wrap items-center justify-between">
-                <div class="z-10 flex-1 min-w-[220px]">
-                    <div class="flex items-center gap-2 mb-2">
-                        <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">目前氣象狀況</p>
-                        <select id="city-selector" onchange="manualCityChange()" class="text-xs bg-gray-100 border border-gray-200 rounded px-2 py-1 outline-none">
-                            <option value="auto">📍 自動定位</option>
-                            <option value="25.03,121.56">臺北市</option>
-                            <option value="24.14,120.67">臺中市</option>
-                            <option value="22.62,120.30">高雄市</option>
-                            <option value="24.81,120.96">新竹市</option>
-                            <option value="22.99,120.21">臺南市</option>
+        <!-- 天氣與功能並排區塊 (不自動堆疊) -->
+        <div class="grid grid-cols-2 gap-3 md:gap-6 mb-8">
+            
+            <!-- 天氣區塊 -->
+            <section id="weather-widget" class="glass-panel rounded-2xl p-4 md:p-6 card-shadow flex flex-col justify-between overflow-hidden">
+                <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                        <p class="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider">目前氣象</p>
+                        <select id="city-selector" onchange="manualCityChange()" class="text-[10px] md:text-xs bg-gray-100 border border-gray-200 rounded px-1 py-0.5 outline-none">
+                            <option value="auto">📍 自動</option>
+                            <option value="25.03,121.56">臺北</option>
+                            <option value="24.14,120.67">臺中</option>
+                            <option value="22.62,120.30">高雄</option>
+                            <option value="24.81,120.96">新竹</option>
+                            <option value="22.99,120.21">臺南</option>
                         </select>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <span id="weather-temp" class="text-4xl font-extrabold text-gray-800">--°C</span>
-                        <div class="flex flex-col border-l pl-4 border-gray-200">
-                            <span id="weather-desc" class="text-gray-600 font-medium">連線中...</span>
-                            <div class="flex items-center gap-1 text-blue-600 text-sm mt-1">
-                                🌧️ 降雨：<span id="weather-rain" class="font-bold">--%</span>
+                    <div class="flex items-center gap-2 md:gap-6">
+                        <div id="weather-icon-container" class="text-3xl md:text-6xl">☁️</div>
+                        <div class="flex flex-col">
+                            <div class="flex flex-col md:flex-row md:items-baseline md:gap-1">
+                                <span id="weather-temp" class="text-2xl md:text-5xl font-extrabold text-gray-800">--°C</span>
+                                <span id="weather-desc" class="text-gray-600 font-medium text-xs md:text-base">連線中...</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-blue-600 text-[10px] md:text-sm mt-1">
+                                <span class="hidden sm:inline">🌧️ 降雨：</span><span class="sm:hidden">🌧️</span><span id="weather-rain" class="font-bold">--%</span>
                             </div>
                         </div>
                     </div>
-                    <p id="weather-location" class="text-[10px] text-gray-400 mt-2 font-mono">定位資訊加載中...</p>
                 </div>
-                <div id="weather-icon-container" class="text-6xl p-2">☁️</div>
-            </div>
-            <!-- API 錯誤警告 -->
-            <div id="api-error" class="hidden mt-3 text-[10px] bg-amber-50 text-amber-600 p-2 rounded border border-amber-200">
-                ⚠️ GitHub HTTPS 連線成功，但 API 或定位暫時無回應。請嘗試手動切換城市。
-            </div>
-        </section>
+                <p id="weather-location" class="text-[9px] md:text-[10px] text-gray-400 mt-4 font-mono truncate">定位中...</p>
+                <div id="api-error" class="hidden mt-2 text-[9px] bg-amber-50 text-amber-600 p-1 rounded border border-amber-200">
+                    ⚠️ API 無回應
+                </div>
+            </section>
+
+            <!-- 新增衣物區塊 -->
+            <section class="glass-panel rounded-2xl p-4 md:p-6 card-shadow">
+                <h2 class="text-sm md:text-lg font-bold mb-3 text-gray-800 flex items-center gap-1 md:gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>新增衣物</span>
+                </h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 mb-0.5 uppercase tracking-wide">分類</label>
+                        <select id="item-category" class="w-full border-gray-200 rounded-lg p-1.5 md:p-2.5 bg-white border outline-none text-xs md:text-sm focus:ring-2 focus:ring-orange-500/20">
+                            <option value="tops">上衣 (Tops)</option>
+                            <option value="bottoms">下身 (Bottoms)</option>
+                            <option value="outerwear">外套 (Outerwear)</option>
+                            <option value="shoes">鞋子 (Shoes)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 mb-0.5 uppercase tracking-wide">照片</label>
+                        <input type="file" id="item-image" accept="image/*" class="w-full text-[10px] text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                    </div>
+                    <button onclick="addItem()" id="add-btn" class="dynamic-button w-full text-white px-4 py-2 md:py-3 rounded-xl font-bold shadow-md transition flex items-center justify-center gap-2 text-xs md:text-sm">
+                        <span>上傳雲端</span>
+                    </button>
+                </div>
+            </section>
+
+        </div>
 
         <!-- 推薦穿搭顯示區 -->
         <section id="outfit-display" class="hidden mb-12">
-            <div id="outfit-card" class="rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden transition-all duration-700">
+            <div id="outfit-card" class="rounded-3xl p-6 md:p-8 text-white shadow-2xl relative overflow-hidden transition-all duration-700">
                 <button onclick="document.getElementById('outfit-display').classList.add('hidden')" class="absolute top-4 right-4 text-white/70 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -118,38 +148,17 @@
                     <h2 class="text-xl font-bold">為您推薦的今日穿搭</h2>
                     <p id="outfit-reason" class="text-sm mt-3 bg-black/10 p-4 rounded-2xl border border-white/20"></p>
                 </div>
-                <div id="outfit-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"></div>
-            </div>
-        </section>
-
-        <!-- 新增衣物 -->
-        <section class="glass-panel rounded-2xl p-6 mb-12 card-shadow">
-            <h2 class="text-lg font-bold mb-4 text-gray-800">新增衣服 (雲端同步)</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                <div>
-                    <label class="block text-sm font-bold text-gray-600 mb-1">分類</label>
-                    <select id="item-category" class="w-full border-gray-200 rounded-lg p-2 bg-white border outline-none">
-                        <option value="tops">上衣 (Tops)</option>
-                        <option value="bottoms">下身 (Bottoms)</option>
-                        <option value="outerwear">外套 (Outerwear)</option>
-                        <option value="shoes">鞋子 (Shoes)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-600 mb-1">上傳照片</label>
-                    <input type="file" id="item-image" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
-                </div>
-                <button onclick="addItem()" id="add-btn" class="dynamic-button text-white px-6 py-2 rounded-lg font-bold shadow-md transition h-[42px]">上傳至雲端</button>
+                <div id="outfit-items" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
             </div>
         </section>
 
         <!-- 衣櫃列表 -->
         <section>
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">雲端衣櫃</h2>
+                <h2 class="text-xl md:text-2xl font-bold text-gray-800">雲端衣櫃</h2>
                 <div id="cloud-status" class="text-[10px] text-green-600 bg-green-50 px-2 py-1 rounded">☁️ 雲端同步中</div>
             </div>
-            <div id="closet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+            <div id="closet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
             <div id="empty-state" class="text-center py-20 hidden">
                 <p class="text-gray-500">雲端目前沒有衣物，請點選上方上傳！</p>
             </div>
@@ -163,7 +172,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase 設置由環境提供
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -175,7 +183,6 @@
         let currentTemp = 23;
         let currentRainChance = 0;
 
-        // 1. 初始化驗證
         const init = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -192,21 +199,17 @@
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (user) {
-                // 登入後啟動監聽與天氣抓取
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'clothes');
                 onSnapshot(q, (s) => {
                     clothes = s.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCloset();
                 }, (err) => console.error("Snapshot error", err));
-                
-                // 延遲一點點啟動天氣，確保網路資源優先給 Firebase
                 setTimeout(fetchWeather, 500);
             }
         });
 
         init();
 
-        // 2. 天氣與定位優化 (針對 GitHub Pages 調整)
         window.manualCityChange = () => {
             const val = document.getElementById('city-selector').value;
             if (val === 'auto') fetchWeather();
@@ -218,8 +221,6 @@
 
         async function fetchWeather() {
             const locEl = document.getElementById('weather-location');
-            
-            // GitHub 必須在 HTTPS 下執行，檢查並提醒
             if (window.location.protocol === 'http:' && window.location.hostname.includes('github.io')) {
                 updateWeather(25.03, 121.56, "⚠️ 請使用 HTTPS 瀏覽");
                 return;
@@ -227,7 +228,6 @@
 
             if (navigator.geolocation) {
                 locEl.textContent = "正在請求定位權限...";
-                // 增加 timeout 到 8000ms，給予使用者足夠時間點擊「允許」
                 navigator.geolocation.getCurrentPosition(
                     (p) => updateWeather(p.coords.latitude, p.coords.longitude, "📍 自動定位成功"),
                     (e) => {
@@ -253,12 +253,9 @@
             errorEl.classList.add('hidden');
 
             try {
-                // 明確指定 https，避免 GitHub Pages 的安全性阻擋
                 const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability&timezone=auto`;
-                
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error("API 無法回應");
-                
                 const data = await response.json();
 
                 currentTemp = Math.round(data.current_weather.temperature);
@@ -268,13 +265,9 @@
                 tempEl.textContent = `${currentTemp}°C`;
                 rainEl.textContent = `${currentRainChance}%`;
                 
-                const codes = { 
-                    0: ["晴朗", "☀️"], 1: ["晴間多雲", "🌤️"], 2: ["多雲", "⛅"], 3: ["陰天", "☁️"], 
-                    45: ["霧", "🌫️"], 61: ["小雨", "🌧️"], 95: ["雷雨", "⛈️"] 
-                };
+                const codes = { 0: ["晴朗", "☀️"], 1: ["晴間多雲", "🌤️"], 2: ["多雲", "⛅"], 3: ["陰天", "☁️"], 45: ["霧", "🌫️"], 61: ["小雨", "🌧️"], 95: ["雷雨", "⛈️"] };
                 const res = codes[data.current_weather.weathercode] || ["多雲", "☁️"];
                 descEl.textContent = res[0]; iconEl.textContent = res[1];
-                
                 updateTheme(currentTemp);
             } catch (err) {
                 console.error("Fetch failed", err);
@@ -285,7 +278,6 @@
             }
         }
 
-        // 3. UI 渲染與其他功能 (與前版本一致)
         function updateTheme(t) {
             const root = document.documentElement;
             const card = document.getElementById('outfit-card');
@@ -342,8 +334,8 @@
             document.getElementById('outfit-display').classList.remove('hidden');
             document.getElementById('outfit-reason').textContent = `今日 ${currentTemp}°C，推薦您這套組合。`;
             document.getElementById('outfit-items').innerHTML = `
-                <div class="flex flex-col items-center"><span class="text-[10px] mb-1">上衣</span><img src="${selT.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
-                <div class="flex flex-col items-center"><span class="text-[10px] mb-1">下身</span><img src="${selB.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
+                <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">上衣</span><img src="${selT.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
+                <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">下身</span><img src="${selB.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
             `;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
