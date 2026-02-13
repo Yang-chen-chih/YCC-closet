@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的數位衣櫥 - 雲端同步版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --bg-color: #FFD1A4; 
+            --primary-color: #c2410c; 
+            --accent-color: #ea580c; 
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            transition: background-color 0.8s ease;
+        }
+
+        .card-shadow {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            transition: all 0.5s ease;
+        }
+
+        .dynamic-text {
+            color: var(--primary-color);
+            transition: color 0.5s ease;
+        }
+
+        .dynamic-button {
+            background-color: var(--accent-color);
+            transition: background-color 0.5s ease;
+        }
+
+        .dynamic-button:hover {
+            filter: brightness(0.9);
+        }
+
+        /* 載入中動畫 */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid var(--accent-color);
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold dynamic-text flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                MyCloset <span class="text-xs font-normal opacity-50">Cloud</span>
+            </h1>
+            <div class="flex items-center gap-2">
+                <div id="loading-spinner" class="loader hidden"></div>
+                <button onclick="generateDailyOutfit()" class="dynamic-button text-white px-5 py-2 rounded-full font-medium transition duration-300 flex items-center gap-2 shadow-lg">
+                    <span>✨ 今日穿搭</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+        
+        <!-- Weather Section -->
+        <section id="weather-widget" class="mb-8 glass-panel rounded-2xl p-6 card-shadow flex flex-wrap items-center justify-between overflow-hidden relative">
+            <div class="z-10 flex-1 min-w-[200px]">
+                <p class="text-gray-500 text-sm font-bold uppercase tracking-wider">今日天氣概況</p>
+                <div class="flex items-center gap-4 mt-1">
+                    <span id="weather-temp" class="text-4xl font-extrabold text-gray-800">--°C</span>
+                    <div class="flex flex-col border-l pl-4 border-gray-200">
+                        <span id="weather-desc" class="text-gray-600 font-medium">正在獲取氣象...</span>
+                        <div class="flex items-center gap-1 text-blue-600 text-sm mt-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86 1.406l-2.435 2.03a2 2 0 01-2.507.032l-2.402-1.922a2 2 0 00-1.815-.297l-1.19.397m15-5.466a3 3 0 11-6 0 3 3 0 016 0zm-7 0a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            降雨機率：<span id="weather-rain" class="font-bold">--%</span>
+                        </div>
+                    </div>
+                </div>
+                <p id="weather-location" class="text-xs text-gray-400 mt-2 italic">定位中...</p>
+            </div>
+            <div id="weather-icon-container" class="text-6xl z-10 p-2 drop-shadow-md">
+                ☁️
+            </div>
+        </section>
+
+        <!-- Outfit Suggestion Section -->
+        <section id="outfit-display" class="hidden mb-12">
+            <div id="outfit-card" class="rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden transition-all duration-700">
+                <button onclick="document.getElementById('outfit-display').classList.add('hidden')" class="absolute top-4 right-4 text-white/70 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold flex items-center gap-2">為您推薦的今日穿搭</h2>
+                    <p id="outfit-reason" class="text-white text-sm mt-3 bg-black/10 p-4 rounded-2xl border border-white/20 leading-relaxed"></p>
+                </div>
+                <div id="outfit-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- Items -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Add Item -->
+        <section class="glass-panel rounded-2xl p-6 mb-12 card-shadow">
+            <h2 class="text-lg font-bold mb-4 text-gray-800">新增衣服 (雲端同步)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">分類</label>
+                    <select id="item-category" class="w-full border-gray-200 rounded-lg p-2 bg-white border focus:ring-2 focus:ring-indigo-400 outline-none">
+                        <option value="tops">上衣 (Tops)</option>
+                        <option value="bottoms">下身 (Bottoms)</option>
+                        <option value="outerwear">外套 (Outerwear)</option>
+                        <option value="shoes">鞋子 (Shoes)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">上傳照片</label>
+                    <input type="file" id="item-image" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                </div>
+                <button onclick="addItem()" id="add-btn" class="dynamic-button text-white px-6 py-2 rounded-lg font-bold transition h-[42px] shadow-md">
+                    上傳至雲端
+                </button>
+            </div>
+        </section>
+
+        <!-- Gallery -->
+        <section>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">雲端衣櫥內容</h2>
+                <div class="flex gap-2 text-sm overflow-x-auto pb-2 sm:pb-0">
+                    <button onclick="filterCloset('all')" class="category-btn active bg-white text-gray-800 px-4 py-1.5 rounded-full font-bold whitespace-nowrap shadow-sm border border-gray-100">全部</button>
+                    <button onclick="filterCloset('tops')" class="category-btn bg-white/40 text-gray-700 px-4 py-1.5 rounded-full whitespace-nowrap">上衣</button>
+                    <button onclick="filterCloset('bottoms')" class="category-btn bg-white/40 text-gray-700 px-4 py-1.5 rounded-full whitespace-nowrap">下身</button>
+                </div>
+            </div>
+
+            <div id="closet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <!-- Items will be loaded from Firestore -->
+            </div>
+            
+            <div id="empty-state" class="text-center py-20 hidden">
+                <p class="text-gray-500 font-medium">雲端目前沒有衣物，請從手機上傳照片！</p>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-[100]">
+        成功！
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration (Inject environment variables)
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'closet-app-default';
+
+        let user = null;
+        let clothes = [];
+
+        // 1. Authentication
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (user) {
+                setupRealtimeListener();
+                fetchWeather();
+            }
+        });
+
+        initAuth();
+
+        // 2. Real-time Database Listener
+        function setupRealtimeListener() {
+            if (!user) return;
+            
+            // Publicly shared data path as per Rule 1
+            const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'clothes');
+            
+            onSnapshot(collectionRef, (snapshot) => {
+                clothes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderCloset();
+            }, (error) => {
+                console.error("Firestore Error:", error);
+            });
+        }
+
+        // 3. Add Item to Firestore
+        window.addItem = async () => {
+            if (!user) return;
+            
+            const category = document.getElementById('item-category').value;
+            const fileInput = document.getElementById('item-image');
+            const file = fileInput.files[0];
+            const btn = document.getElementById('add-btn');
+
+            if (!file) {
+                showToast("請選擇照片");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "上傳中...";
+            document.getElementById('loading-spinner').classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'clothes');
+                    await addDoc(collectionRef, {
+                        category,
+                        image: event.target.result, // Base64 string
+                        userId: user.uid,
+                        createdAt: serverTimestamp()
+                    });
+                    fileInput.value = "";
+                    showToast("已同步至雲端！");
+                } catch (e) {
+                    showToast("上傳失敗");
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = "上傳至雲端";
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // 4. Delete from Firestore
+        window.deleteItem = async (docId) => {
+            if (!user) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clothes', docId);
+                await deleteDoc(docRef);
+                showToast("已從雲端移除");
+            } catch (e) {
+                showToast("刪除失敗");
+            }
+        };
+
+        // 5. Render Logic
+        let currentFilter = 'all';
+        window.filterCloset = (cat) => {
+            currentFilter = cat;
+            // Update UI buttons
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-white', 'font-bold', 'shadow-sm', 'border-gray-100');
+                btn.classList.add('bg-white/40', 'text-gray-700');
+            });
+            event.target.classList.add('active', 'bg-white', 'font-bold', 'shadow-sm', 'border-gray-100');
+            renderCloset();
+        };
+
+        function renderCloset() {
+            const grid = document.getElementById('closet-grid');
+            const emptyState = document.getElementById('empty-state');
+            grid.innerHTML = "";
+
+            const filteredItems = currentFilter === 'all' ? clothes : clothes.filter(i => i.category === currentFilter);
+            
+            // Simple sort by timestamp in memory (Rule 2)
+            filteredItems.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+            if (filteredItems.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                filteredItems.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white rounded-2xl overflow-hidden card-shadow group relative aspect-[3/4]";
+                    card.innerHTML = `
+                        <img src="${item.image}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <button onclick="deleteItem('${item.id}')" class="bg-red-500 text-white p-3 rounded-full hover:bg-red-600 transition shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        // 6. Weather & Suggestion (Integrated from previous version)
+        let currentTemp = 25;
+        let currentRainChance = 0;
+
+        async function fetchWeather() {
+            const tempEl = document.getElementById('weather-temp');
+            const descEl = document.getElementById('weather-desc');
+            const rainEl = document.getElementById('weather-rain');
+            const iconEl = document.getElementById('weather-icon-container');
+            const locEl = document.getElementById('weather-location');
+
+            let lat = 25.0330; let lon = 121.5654;
+            try {
+                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:3000}));
+                lat = pos.coords.latitude; lon = pos.coords.longitude;
+                locEl.textContent = `📍 ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+            } catch(e) { locEl.textContent = "📍 定位失敗，預設臺北市"; }
+
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability`);
+                const data = await res.json();
+                currentTemp = Math.round(data.current_weather.temperature);
+                currentRainChance = data.hourly.precipitation_probability[new Date().getHours()];
+                tempEl.textContent = `${currentTemp}°C`;
+                rainEl.textContent = `${currentRainChance}%`;
+                const interpret = (c) => {
+                    if (c === 0) return { t: "晴朗", i: "☀️" };
+                    if (c <= 3) return { t: "多雲", i: "⛅" };
+                    if (c <= 82) return { t: "陣雨", i: "🌧️" };
+                    return { t: "雷雨", i: "⛈️" };
+                };
+                const { t, i } = interpret(data.current_weather.weathercode);
+                descEl.textContent = t; iconEl.textContent = i;
+                updateThemeByTemp(currentTemp);
+            } catch(e) {}
+        }
+
+        function updateThemeByTemp(temp) {
+            const root = document.documentElement;
+            const card = document.getElementById('outfit-card');
+            let bg, prim, acc, grad;
+            if (temp > 25) { bg="#FFD1A4"; prim="#c2410c"; acc="#ea580c"; grad="linear-gradient(to bottom right, #ea580c, #f97316)"; }
+            else if (temp >= 15) { bg="#ACD6FF"; prim="#1d4ed8"; acc="#2563eb"; grad="linear-gradient(to bottom right, #2563eb, #3b82f6)"; }
+            else { bg="#0066CC"; prim="#ffffff"; acc="#1e3a8a"; grad="linear-gradient(to bottom right, #1e3a8a, #1e40af)"; }
+            root.style.setProperty('--bg-color', bg);
+            root.style.setProperty('--primary-color', prim);
+            root.style.setProperty('--accent-color', acc);
+            if (card) card.style.background = grad;
+        }
+
+        window.generateDailyOutfit = () => {
+            const tops = clothes.filter(i => i.category === 'tops');
+            const bottoms = clothes.filter(i => i.category === 'bottoms');
+            const outer = clothes.filter(i => i.category === 'outerwear');
+            const shoes = clothes.filter(i => i.category === 'shoes');
+
+            if (tops.length === 0 || bottoms.length === 0) {
+                showToast("請至少上傳一件上衣和下身");
+                return;
+            }
+
+            let reason = [`今日氣溫約 ${currentTemp}°C。`];
+            const selected = [];
+            if (currentRainChance > 30) reason.push(`☔ 降雨機率 ${currentRainChance}%，別忘了帶傘！`);
+            if (currentTemp < 20) {
+                if (outer.length > 0) selected.push({ ...outer[Math.floor(Math.random() * outer.length)], l: '外套' });
+                else reason.push(`⚠️ 天氣轉涼，建議補件外套照片。`);
+            }
+            selected.push({ ...tops[Math.floor(Math.random() * tops.length)], l: '上衣' });
+            selected.push({ ...bottoms[Math.floor(Math.random() * bottoms.length)], l: '下身' });
+            if (shoes.length > 0) selected.push({ ...shoes[Math.floor(Math.random() * shoes.length)], l: '鞋款' });
+
+            document.getElementById('outfit-display').classList.remove('hidden');
+            document.getElementById('outfit-reason').innerHTML = reason.join('<br>');
+            document.getElementById('outfit-items').innerHTML = selected.map(item => `
+                <div class="flex flex-col items-center">
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest mb-2 text-white/80">${item.l}</span>
+                    <div class="w-full aspect-[3/4] rounded-2xl overflow-hidden border-2 border-white/30 shadow-xl bg-black/10">
+                        <img src="${item.image}" class="w-full h-full object-cover">
+                    </div>
+                </div>
+            `).join('');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => toast.classList.add('opacity-0', 'pointer-events-none'), 3000);
+        }
+    </script>
+</body>
+</html>
