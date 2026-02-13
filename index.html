@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>我的衣櫃</title>
     <link rel="icon" href="64衣櫃icon.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,12 +21,13 @@
             background-color: var(--bg-main);
             color: var(--text-main);
             min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .glass-card {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(10px);
-            border-radius: 40px;
+            border-radius: 32px; /* 稍微縮小手機版圓角 */
             box-shadow: 0 4px 24px rgba(0,0,0,0.02);
             border: 1px solid rgba(255, 255, 255, 0.6);
         }
@@ -51,34 +52,43 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* 隱藏捲軸但保持滾動功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
-<body class="p-6 lg:p-12">
+<body class="p-4 md:p-8 lg:p-12">
 
-    <div class="max-w-7xl mx-auto space-y-8">
+    <div class="max-w-7xl mx-auto space-y-6 md:space-y-8">
         
         <!-- Top Section: Weather & Helper -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
             
             <!-- 左側：天氣整體概況 -->
-            <div class="lg:col-span-5 glass-card p-10 flex flex-col min-h-[500px]">
-                <div class="space-y-8 flex-grow">
+            <div class="lg:col-span-5 glass-card p-6 md:p-10 flex flex-col min-h-[350px] md:min-h-[500px]">
+                <div class="space-y-6 md:space-y-8 flex-grow">
                     <div class="flex justify-between items-start">
-                        <div class="flex gap-4 items-center">
-                            <div class="text-4xl filter drop-shadow-md" id="weather-icon">☀️</div>
+                        <div class="flex gap-3 md:gap-4 items-center">
+                            <div class="text-3xl md:text-4xl filter drop-shadow-md" id="weather-icon">☀️</div>
                             <div>
-                                <p class="text-[12px] font-bold text-gray-400 tracking-wider">天氣整體概況</p>
-                                <p class="text-[10px] text-gray-400 font-medium">即時氣象數據</p>
+                                <p class="text-[10px] md:text-[12px] font-bold text-gray-400 tracking-wider">天氣整體概況</p>
+                                <p class="text-[8px] md:text-[10px] text-gray-400 font-medium">即時氣象數據</p>
                             </div>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">目前溫感</p>
-                            <p class="text-3xl font-black" id="current-temp">--°C</p>
+                            <p class="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">目前溫感</p>
+                            <p class="text-2xl md:text-3xl font-black" id="current-temp">--°C</p>
                         </div>
                     </div>
 
                     <div class="pt-2">
-                        <h2 class="text-2xl font-black leading-tight text-zinc-800">
+                        <h2 class="text-xl md:text-2xl font-black leading-tight text-zinc-800">
                             今天「<span id="wx-desc">讀取中...</span>」，<br>
                             氣溫約 <span id="temp-range">--°C 至 --°C</span>，<br>
                             <span id="comfort-text">環境數據更新中</span>
@@ -86,52 +96,52 @@
                     </div>
 
                     <div class="space-y-1">
-                        <p class="text-[12px] font-bold text-gray-400 tracking-wider">雨具攜帶建議</p>
-                        <h3 class="text-xl font-black text-green-600" id="rain-advice">無需攜帶雨具</h3>
-                        <p class="text-[12px] text-gray-400 font-medium">預報降雨機率 <span id="pop-value">0%</span></p>
+                        <p class="text-[10px] md:text-[12px] font-bold text-gray-400 tracking-wider">雨具攜帶建議</p>
+                        <h3 class="text-lg md:text-xl font-black text-green-600" id="rain-advice">無需攜帶雨具</h3>
+                        <p class="text-[10px] md:text-[12px] text-gray-400 font-medium">預報降雨機率 <span id="pop-value">0%</span></p>
                     </div>
                 </div>
 
-                <div class="pt-8 border-t border-black/5">
-                    <p class="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-3">DAILY MOOD</p>
-                    <p class="text-xl font-bold italic mood-highlight leading-relaxed" id="mood-text">
+                <div class="pt-6 md:pt-8 border-t border-black/5">
+                    <p class="text-[8px] md:text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 md:shadow-3">DAILY MOOD</p>
+                    <p class="text-lg md:text-xl font-bold italic mood-highlight leading-relaxed" id="mood-text">
                         正在掃描衣櫃與氣候狀況...
                     </p>
                 </div>
             </div>
 
             <!-- 右側：今日穿搭助手 -->
-            <div id="helper-card" class="lg:col-span-7 glass-card p-10 flex flex-col justify-between min-h-[500px]">
+            <div id="helper-card" class="lg:col-span-7 glass-card p-6 md:p-10 flex flex-col justify-between min-h-[350px] md:min-h-[500px]">
                 
-                <div id="helper-initial" class="space-y-8 h-full flex flex-col justify-center">
-                    <div class="space-y-6">
+                <div id="helper-initial" class="space-y-6 md:space-y-8 h-full flex flex-col justify-center">
+                    <div class="space-y-4 md:space-y-6 text-center lg:text-left">
                         <div>
-                            <div id="current-date" class="text-indigo-500 font-black text-lg mb-2 tracking-tighter"></div>
-                            <p class="text-[14px] font-bold text-gray-400 tracking-widest uppercase mb-4">智能演算法穿搭助手</p>
-                            <h3 class="text-4xl font-black mb-4 leading-tight">為您媒合最舒適的衣物厚度</h3>
+                            <div id="current-date" class="text-indigo-500 font-black text-md md:text-lg mb-2 tracking-tighter"></div>
+                            <p class="text-[12px] md:text-[14px] font-bold text-gray-400 tracking-widest uppercase mb-3">智能穿搭助手</p>
+                            <h3 class="text-3xl md:text-4xl font-black mb-4 leading-tight">為您媒合最舒適的衣物厚度</h3>
                         </div>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row gap-4 mt-8">
-                        <button id="btn-recommend" onclick="recommendOutfit()" class="flex-grow accent-bg text-white px-8 py-6 rounded-[24px] text-lg font-black flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-indigo-200">
-                            <i data-lucide="sparkles" class="w-6 h-6"></i> AI 智能穿搭建議
+                    <div class="flex flex-col sm:flex-row gap-4 mt-4">
+                        <button id="btn-recommend" onclick="recommendOutfit()" class="w-full accent-bg text-white px-6 py-5 md:py-6 rounded-[24px] text-md md:text-lg font-black flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-indigo-100">
+                            <i data-lucide="sparkles" class="w-5 h-5 md:w-6 h-6"></i> AI 智能穿搭建議
                         </button>
                     </div>
                 </div>
 
                 <div id="helper-result" class="hidden fade-in space-y-6 h-full flex flex-col">
                     <div class="flex justify-between items-center">
-                        <p class="text-[14px] font-bold text-indigo-500 tracking-widest uppercase">AI 智能媒合結果</p>
-                        <button onclick="resetHelper()" class="text-sm font-bold text-gray-400 hover:text-indigo-500 flex items-center gap-2">
-                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 重新挑選
+                        <p class="text-[12px] md:text-[14px] font-bold text-indigo-500 tracking-widest uppercase">AI 智能媒合結果</p>
+                        <button onclick="resetHelper()" class="text-xs font-bold text-gray-400 hover:text-indigo-500 flex items-center gap-1">
+                            <i data-lucide="rotate-ccw" class="w-3 h-3"></i> 重新挑選
                         </button>
                     </div>
                     
-                    <div class="flex-grow flex flex-col items-center justify-center space-y-8">
-                        <div id="outfit-display-area" class="flex justify-center gap-4 flex-wrap"></div>
-                        <div class="max-w-md w-full space-y-4">
-                            <div id="outfit-logic-text" class="text-center text-lg font-bold text-gray-600 bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100"></div>
-                            <div id="stat-bar" class="flex justify-between text-[10px] font-black text-indigo-400 uppercase tracking-widest px-4"></div>
+                    <div class="flex-grow flex flex-col items-center justify-center space-y-6 md:space-y-8">
+                        <div id="outfit-display-area" class="flex justify-center gap-3 md:gap-4 flex-wrap"></div>
+                        <div class="max-w-md w-full space-y-3">
+                            <div id="outfit-logic-text" class="text-center text-md md:text-lg font-bold text-gray-600 bg-indigo-50/50 p-4 md:p-6 rounded-3xl border border-indigo-100"></div>
+                            <div id="stat-bar" class="flex justify-between text-[8px] md:text-[10px] font-black text-indigo-400 uppercase tracking-widest px-4"></div>
                         </div>
                     </div>
                 </div>
@@ -139,38 +149,40 @@
         </div>
 
         <!-- 衣櫃管理區域 -->
-        <div class="glass-card p-10 min-h-[600px] flex flex-col">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 border-b border-black/5 pb-8">
-                <div>
-                    <h2 class="text-4xl font-black tracking-tight">我的衣櫃</h2>
-                </div>
+        <div class="glass-card p-6 md:p-10 min-h-[500px] flex flex-col">
+            <div class="flex flex-col space-y-6 mb-8 border-b border-black/5 pb-6">
+                <h2 class="text-3xl md:text-4xl font-black tracking-tight">我的衣櫃</h2>
                 
-                <nav class="flex bg-zinc-100/80 p-1.5 rounded-2xl flex-wrap gap-1">
-                    <button onclick="filterItems('all')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl bg-white shadow-sm">全部</button>
-                    <button onclick="filterItems('tops')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">上衣</button>
-                    <button onclick="filterItems('pants')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">褲子</button>
-                    <button onclick="filterItems('skirts')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">裙子</button>
-                    <button onclick="filterItems('shoes')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">鞋子</button>
-                    <button onclick="filterItems('outerwear')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">外套</button>
+                <nav class="flex overflow-x-auto no-scrollbar bg-zinc-100/80 p-1.5 rounded-2xl gap-1">
+                    <button onclick="filterItems('all')" class="filter-btn flex-shrink-0 px-5 md:px-6 py-2 text-xs md:text-sm font-black rounded-xl bg-white shadow-sm">全部</button>
+                    <button onclick="filterItems('tops')" class="filter-btn flex-shrink-0 px-5 md:px-6 py-2 text-xs md:text-sm font-black rounded-xl opacity-40">上衣</button>
+                    <button onclick="filterItems('pants')" class="filter-btn flex-shrink-0 px-5 md:px-6 py-2 text-xs md:text-sm font-black rounded-xl opacity-40">褲子</button>
+                    <button onclick="filterItems('skirts')" class="filter-btn flex-shrink-0 px-5 md:px-6 py-2 text-xs md:text-sm font-black rounded-xl opacity-40">裙子</button>
+                    <button onclick="filterItems('shoes')" class="filter-btn flex-shrink-0 px-5 md:px-6 py-2 text-xs md:text-sm font-black rounded-xl opacity-40">鞋子</button>
+                    <button onclick="filterItems('outerwear')" class="filter-btn flex-shrink-0 px-5 md:px-6 py-2 text-xs md:text-sm font-black rounded-xl opacity-40">外套</button>
                 </nav>
             </div>
 
-            <div id="closet-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 flex-grow"></div>
-            <div id="empty-hint" class="hidden py-32 flex flex-col items-center justify-center text-center opacity-10">
-                <i data-lucide="box" class="w-20 h-20"></i>
-                <p class="text-xl font-black">目前衣櫃是空的</p>
+            <div id="closet-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6 flex-grow"></div>
+            <div id="empty-hint" class="hidden py-20 md:py-32 flex flex-col items-center justify-center text-center opacity-10">
+                <i data-lucide="box" class="w-16 h-16 md:w-20 h-20"></i>
+                <p class="text-lg md:text-xl font-black">目前衣櫃是空的</p>
             </div>
 
-            <div class="mt-12 pt-10 border-t border-black/5">
-                <div class="flex flex-col lg:flex-row items-end gap-8">
-                    <div class="w-full lg:w-40 aspect-square rounded-[32px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-50" onclick="document.getElementById('item-image-input').click()">
+            <!-- 新增衣物表單 -->
+            <div class="mt-10 pt-8 border-t border-black/5">
+                <div class="flex flex-col lg:flex-row items-stretch lg:items-end gap-6 md:gap-8">
+                    <!-- 照片上傳區 -->
+                    <div class="w-full lg:w-40 aspect-square rounded-[32px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-50 transition-colors" onclick="document.getElementById('item-image-input').click()">
                         <i data-lucide="plus" class="w-8 h-8 text-gray-300"></i>
+                        <span class="text-[10px] font-bold text-gray-400 mt-2">上傳照片</span>
                         <input type="file" id="item-image-input" accept="image/*">
                     </div>
-                    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                    
+                    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 w-full">
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">衣物類別</label>
-                            <select id="cat-select" class="w-full h-16 px-6 rounded-2xl bg-white border border-gray-100 font-bold outline-none focus:ring-2 focus:ring-indigo-200">
+                            <select id="cat-select" class="w-full h-14 md:h-16 px-4 md:px-6 rounded-2xl bg-white border border-gray-100 font-bold outline-none focus:ring-2 focus:ring-indigo-200">
                                 <option value="tops">上衣</option>
                                 <option value="pants">褲子</option>
                                 <option value="skirts">裙子</option>
@@ -180,18 +192,18 @@
                         </div>
                         <div class="space-y-2">
                             <label id="warmth-label" class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">保暖厚度: 50%</label>
-                            <div class="h-16 flex items-center px-6 bg-white rounded-2xl border border-gray-100">
+                            <div class="h-14 md:h-16 flex items-center px-4 md:px-6 bg-white rounded-2xl border border-gray-100">
                                 <input type="range" id="warmth-range" min="0" max="100" value="50" class="w-full" oninput="document.getElementById('warmth-label').textContent=`保暖厚度: ${this.value}%`">
                             </div>
                         </div>
                     </div>
-                    <button onclick="handleAddItem()" class="h-16 px-12 accent-bg text-white rounded-2xl font-black hover:brightness-110 active:scale-95 transition-all">新增衣物</button>
+                    <button onclick="handleAddItem()" class="h-14 md:h-16 px-8 md:px-12 accent-bg text-white rounded-2xl font-black hover:brightness-110 active:scale-95 transition-all">新增衣物</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 bg-zinc-900 text-white text-xs font-black rounded-full shadow-2xl opacity-0 translate-y-6 transition-all duration-300 z-[200]"></div>
+    <div id="toast" class="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 px-6 md:px-8 py-3 md:py-4 bg-zinc-900 text-white text-[10px] md:text-xs font-black rounded-full shadow-2xl opacity-0 translate-y-6 transition-all duration-300 z-[200]"></div>
 
     <script>
         // --- 核心狀態 ---
@@ -230,7 +242,6 @@
         // --- 天氣模組 ---
         async function WeatherFetch() {
             try {
-                // 預設抓取台北市數據
                 const res = await fetch(`https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWA-6CCF2861-4317-4000-BED2-E9BACDB2DEC3&locationName=臺北市`);
                 const json = await res.json();
                 const el = json.records.location[0].weatherElement;
@@ -241,7 +252,7 @@
                 state.weather = {
                     low: minT,
                     high: maxT,
-                    temp: Math.round((minT + maxT) / 2), // 以均溫作為基礎體感參考
+                    temp: Math.round((minT + maxT) / 2),
                     desc: el.find(e => e.elementName === "Wx").time[0].parameter.parameterName,
                     pop: el.find(e => e.elementName === "PoP").time[0].parameter.parameterName
                 };
@@ -283,12 +294,12 @@
             document.getElementById('empty-hint').classList.add('hidden');
             
             container.innerHTML = filtered.map(item => `
-                <div class="group relative aspect-[3/4] bg-white rounded-3xl overflow-hidden shadow-sm border border-black/5">
+                <div class="group relative aspect-[3/4] bg-white rounded-2xl overflow-hidden shadow-sm border border-black/5">
                     <img src="${item.image}" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <button onclick="deleteItem('${item.id}')" class="p-3 bg-white text-red-500 rounded-full shadow-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
-                    <div class="absolute bottom-2 left-2 right-2 p-2 bg-white/90 rounded-xl flex justify-between items-center text-[10px] font-bold">
+                    <div class="absolute bottom-1.5 left-1.5 right-1.5 p-1.5 bg-white/90 rounded-xl flex justify-between items-center text-[8px] font-bold">
                         <span>${categoryNames[item.category]}</span>
                         <span class="text-indigo-600">${item.warmth}%</span>
                     </div>
@@ -323,7 +334,7 @@
             state.currentFilter = type; 
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 const isActive = btn.getAttribute('onclick').includes(`'${type}'`);
-                btn.className = isActive ? "filter-btn px-6 py-2 text-sm font-black rounded-xl bg-white shadow-sm" : "filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40";
+                btn.className = isActive ? "filter-btn flex-shrink-0 px-5 md:px-6 py-2 text-xs md:text-sm font-black rounded-xl bg-white shadow-sm" : "filter-btn flex-shrink-0 px-5 md:px-6 py-2 text-xs md:text-sm font-black rounded-xl opacity-40";
             });
             renderCloset(); 
         }
@@ -331,35 +342,26 @@
         // --- 核心推薦演算法 ---
         function recommendOutfit() {
             const { temp } = state.weather;
-            
-            // 1. 計算需求保暖度 (氣溫越低，需求保暖度越高)
-            // 邏輯假設：30度以上需要10%厚度，10度以下需要90%厚度
             let targetWarmth = Math.max(10, Math.min(90, (35 - temp) * 4));
 
-            // 2. 獲取分類衣物
             const tops = state.clothes.filter(c => c.category === 'tops');
             const bottoms = state.clothes.filter(c => (c.category === 'pants' || c.category === 'skirts'));
             const outers = state.clothes.filter(c => c.category === 'outerwear');
             const shoes = state.clothes.filter(c => c.category === 'shoes');
 
             if (tops.length === 0 || bottoms.length === 0) {
-                return Utils.toast("衣櫃中至少需要一件上衣和一件下身衣物");
+                return Utils.toast("衣櫃中至少需要一件上衣和一件下身");
             }
 
-            // 3. 搜尋最佳組合 (Brute Force 尋找與 targetWarmth 最接近的)
             let bestCombo = null;
             let minDiff = 999;
 
             for (let t of tops) {
                 for (let b of bottoms) {
-                    // 基本組合：上衣 + 下身
                     let baseAvg = (t.warmth + b.warmth) / 2;
                     let comboItems = [t, b];
-                    let currentAvg = baseAvg;
 
-                    // 如果保暖度不足，嘗試加入外套
                     if (baseAvg < targetWarmth - 10 && outers.length > 0) {
-                        // 找一件外套試試
                         for (let o of outers) {
                             let withOuterAvg = (t.warmth + b.warmth + o.warmth) / 3;
                             let diff = Math.abs(withOuterAvg - targetWarmth);
@@ -369,7 +371,6 @@
                             }
                         }
                     } else {
-                        // 不穿外套的情況
                         let diff = Math.abs(baseAvg - targetWarmth);
                         if (diff < minDiff) {
                             minDiff = diff;
@@ -381,7 +382,6 @@
 
             if (!bestCombo) return Utils.toast("找不到合適的穿搭組合");
 
-            // 4. UI 呈現
             document.getElementById('helper-initial').classList.add('hidden');
             document.getElementById('helper-result').classList.remove('hidden');
             
@@ -389,27 +389,24 @@
             const logicText = document.getElementById('outfit-logic-text');
             const statBar = document.getElementById('stat-bar');
 
-            // 如果有鞋子，順便塞一個進去（不計入保暖度計算）
-            if (shoes.length > 0) {
-                bestCombo.items.push(shoes[0]);
-            }
+            if (shoes.length > 0) bestCombo.items.push(shoes[0]);
 
             displayArea.innerHTML = bestCombo.items.map(i => `
-                <div class="group relative w-24 sm:w-32 aspect-[3/4] rounded-2xl overflow-hidden border-4 border-white shadow-lg fade-in">
+                <div class="group relative w-20 sm:w-28 md:w-32 aspect-[3/4] rounded-2xl overflow-hidden border-2 md:border-4 border-white shadow-lg fade-in">
                     <img src="${i.image}" class="w-full h-full object-cover">
-                    <div class="absolute bottom-1 right-1 bg-white/80 px-1.5 py-0.5 rounded text-[8px] font-black">${categoryNames[i.category]}</div>
+                    <div class="absolute bottom-1 right-1 bg-white/80 px-1 py-0.5 rounded text-[6px] md:text-[8px] font-black">${categoryNames[i.category]}</div>
                 </div>
             `).join('');
 
             logicText.innerHTML = `
-                目前體感 <span class="text-indigo-600">${temp}°C</span>，<br>
-                最舒適厚度約為 <span class="text-indigo-600">${Math.round(targetWarmth)}%</span>。<br>
-                推薦這套組合，平均厚度為 <span class="text-indigo-600">${bestCombo.avg}%</span>。
+                目前體感 <span class="text-indigo-600">${temp}°C</span>，<br class="md:hidden">
+                建議厚度約 <span class="text-indigo-600">${Math.round(targetWarmth)}%</span>。<br>
+                本組合平均 <span class="text-indigo-600">${bestCombo.avg}%</span>。
             `;
 
             statBar.innerHTML = `
-                <span>需求厚度: ${Math.round(targetWarmth)}%</span>
-                <span>媒合厚度: ${bestCombo.avg}%</span>
+                <span>需求: ${Math.round(targetWarmth)}%</span>
+                <span>媒合: ${bestCombo.avg}%</span>
             `;
 
             lucide.createIcons();
@@ -420,7 +417,6 @@
             document.getElementById('helper-initial').classList.remove('hidden'); 
         }
 
-        // --- 初始化 ---
         window.onload = () => {
             const saved = localStorage.getItem('VIRTUAL_CLOSET_V4');
             if(saved) state.clothes = JSON.parse(saved);
@@ -437,4 +433,3 @@
     </script>
 </body>
 </html>
-
