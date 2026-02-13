@@ -41,15 +41,6 @@
             transition: background-color 0.5s ease;
         }
 
-        /* 針對 iframe 的封裝樣式 */
-        .iframe-container {
-            width: 100%;
-            height: 100%;
-            border: none;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
         .loader {
             border: 3px solid #f3f3f3;
             border-radius: 50%;
@@ -84,28 +75,49 @@
     <main class="max-w-5xl mx-auto px-4 mt-6">
         
         <!-- 天氣與功能區域 -->
-        <div class="grid grid-cols-2 gap-3 md:gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
             
-            <!-- 天氣區塊：改為鑲嵌外部網頁 -->
-            <section id="weather-widget" class="glass-panel rounded-2xl p-2 md:p-3 card-shadow flex flex-col overflow-hidden relative min-h-[180px]">
-                <p class="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-2 ml-2">即時氣象儀表板</p>
-                <!-- 鑲嵌指定的網址 -->
-                <iframe 
-                    src="https://456123qp.github.io/test/" 
-                    class="iframe-container"
-                    title="Weather Dashboard">
-                </iframe>
+            <!-- 天氣區塊 -->
+            <section id="weather-widget" class="glass-panel rounded-2xl p-5 md:p-6 card-shadow flex flex-col justify-between overflow-hidden relative">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">即時氣象 (Open-Meteo)</p>
+                        <select id="city-selector" onchange="handleLocationChange()" class="text-xs bg-white border border-gray-200 rounded px-2 py-1 outline-none">
+                            <option value="auto">📍 自動定位</option>
+                            <option value="25.03,121.56">臺北市</option>
+                            <option value="25.01,121.46">新北市</option>
+                            <option value="24.14,120.67">臺中市</option>
+                            <option value="22.62,120.30">高雄市</option>
+                            <option value="24.81,120.96">新竹市</option>
+                            <option value="22.99,120.21">臺南市</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-6">
+                        <div id="weather-icon-container" class="text-5xl md:text-6xl">☁️</div>
+                        <div class="flex flex-col">
+                            <div class="flex items-baseline gap-2">
+                                <span id="weather-temp" class="text-4xl md:text-5xl font-extrabold text-gray-800">--°C</span>
+                                <span id="weather-desc" class="text-gray-600 font-medium">讀取中...</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-blue-600 text-sm mt-1">
+                                <span>🌧️ 降雨機率：</span><span id="weather-rain" class="font-bold">--%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p id="weather-location" class="text-[10px] text-gray-400 mt-6 font-mono truncate">正在初始化氣象數據...</p>
             </section>
 
             <!-- 新增衣物區塊 -->
-            <section class="glass-panel rounded-2xl p-4 md:p-6 card-shadow">
-                <h2 class="text-sm md:text-lg font-bold mb-3 text-gray-800 flex items-center gap-1 md:gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            <section class="glass-panel rounded-2xl p-5 md:p-6 card-shadow">
+                <h2 class="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     <span>新增衣物</span>
                 </h2>
-                <div class="space-y-3">
+                <div class="space-y-4">
                     <div>
-                        <select id="item-category" class="w-full border-gray-200 rounded-lg p-1.5 md:p-2.5 bg-white border text-xs md:text-sm outline-none">
+                        <label class="block text-xs text-gray-500 mb-1 ml-1">衣物種類</label>
+                        <select id="item-category" class="w-full border-gray-200 rounded-lg p-2.5 bg-white border text-sm outline-none">
                             <option value="tops">上衣 (Tops)</option>
                             <option value="bottoms">下身 (Bottoms)</option>
                             <option value="outerwear">外套 (Outerwear)</option>
@@ -113,9 +125,10 @@
                         </select>
                     </div>
                     <div>
-                        <input type="file" id="item-image" accept="image/*" class="w-full text-[10px] text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:bg-gray-100 file:text-gray-700">
+                        <label class="block text-xs text-gray-500 mb-1 ml-1">上傳照片</label>
+                        <input type="file" id="item-image" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
                     </div>
-                    <button onclick="addItem()" class="dynamic-button w-full text-white px-4 py-2 rounded-xl font-bold shadow-md transition text-xs md:text-sm">
+                    <button onclick="addItem()" class="dynamic-button w-full text-white px-4 py-3 rounded-xl font-bold shadow-md transition text-sm">
                         上傳雲端
                     </button>
                 </div>
@@ -164,7 +177,14 @@
 
         let user = null;
         let clothes = [];
-        let currentTemp = 23; // 預設值，之後可透過與 iframe 溝通獲取
+        let currentTemp = 23;
+
+        // Open-Meteo 天氣代碼對應
+        const weatherCodeMap = {
+            0: ["晴朗", "☀️"], 1: ["晴間多雲", "🌤️"], 2: ["多雲", "⛅"], 3: ["陰天", "☁️"],
+            45: ["霧", "🌫️"], 48: ["霧", "🌫️"], 51: ["毛毛雨", "🌦️"], 61: ["小雨", "🌧️"],
+            63: ["中雨", "🌧️"], 71: ["小雪", "❄️"], 95: ["雷雨", "⛈️"]
+        };
 
         onAuthStateChanged(auth, (u) => {
             user = u;
@@ -174,6 +194,7 @@
                     clothes = s.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCloset();
                 });
+                autoLocateWeather();
             }
         });
 
@@ -186,19 +207,75 @@
         };
         initAuth();
 
-        // 監聽 iframe 傳來的訊息 (選用功能：如果 test 網頁有下發氣溫數據)
-        window.addEventListener("message", (event) => {
-            if (event.data && event.data.type === "WEATHER_UPDATE") {
-                currentTemp = event.data.temp;
+        // 直接向 Open-Meteo 請求數據
+        async function fetchWeather(lat, lon, label) {
+            const tempEl = document.getElementById('weather-temp');
+            const descEl = document.getElementById('weather-desc');
+            const rainEl = document.getElementById('weather-rain');
+            const iconEl = document.getElementById('weather-icon-container');
+            const locEl = document.getElementById('weather-location');
+
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability&timezone=auto`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                const weather = data.current_weather;
+                currentTemp = Math.round(weather.temperature);
+                
+                // 取得當前小時的降雨機率
+                const hourIdx = new Date().getHours();
+                const rainProb = data.hourly.precipitation_probability[hourIdx] || 0;
+
+                const [desc, icon] = weatherCodeMap[weather.weathercode] || ["多雲", "☁️"];
+
+                tempEl.textContent = `${currentTemp}°C`;
+                descEl.textContent = desc;
+                iconEl.textContent = icon;
+                rainEl.textContent = `${rainProb}%`;
+                locEl.textContent = label;
+
                 updateTheme(currentTemp);
+            } catch (err) {
+                console.error("Open-Meteo 讀取失敗:", err);
+                tempEl.textContent = "--°C";
+                descEl.textContent = "讀取失敗";
             }
-        }, false);
+        }
+
+        window.autoLocateWeather = () => {
+            const locEl = document.getElementById('weather-location');
+            if (navigator.geolocation) {
+                locEl.textContent = "正在透過瀏覽器定位...";
+                navigator.geolocation.getCurrentPosition(
+                    (p) => fetchWeather(p.coords.latitude, p.coords.longitude, "📍 自動定位成功"),
+                    (e) => fetchWeather(25.03, 121.56, "📍 定位權限受限，預設臺北"),
+                    { timeout: 5000 }
+                );
+            } else {
+                fetchWeather(25.03, 121.56, "📍 瀏覽器不支援定位，預設臺北");
+            }
+        };
+
+        window.handleLocationChange = () => {
+            const val = document.getElementById('city-selector').value;
+            if (val === "auto") {
+                autoLocateWeather();
+            } else {
+                const [lat, lon] = val.split(',').map(Number);
+                const cityName = document.querySelector(`#city-selector option[value="${val}"]`).textContent;
+                fetchWeather(lat, lon, `📍 ${cityName}`);
+            }
+        };
 
         function updateTheme(t) {
             const root = document.documentElement;
             const card = document.getElementById('outfit-card');
             let bg = "#FFD1A4", grad = "linear-gradient(to bottom right, #ea580c, #f97316)";
-            if (t < 22) { bg = "#ACD6FF"; grad = "linear-gradient(to bottom right, #2563eb, #3b82f6)"; }
+            if (t < 22) { 
+                bg = "#ACD6FF"; 
+                grad = "linear-gradient(to bottom right, #2563eb, #3b82f6)"; 
+            }
             root.style.setProperty('--bg-color', bg);
             if (card) card.style.background = grad;
         }
@@ -208,7 +285,7 @@
             const cat = document.getElementById('item-category').value;
             const fileInput = document.getElementById('item-image');
             const file = fileInput.files[0];
-            if (!file) { showToast("請選照片"); return; }
+            if (!file) { showToast("請選擇照片"); return; }
             
             document.getElementById('loading-spinner').classList.remove('hidden');
             const reader = new FileReader();
@@ -224,7 +301,7 @@
         };
 
         window.deleteItem = async (id) => {
-            if(confirm("刪除這件衣物？")) {
+            if(confirm("確定要刪除這件衣物嗎？")) {
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clothes', id));
             }
         };
@@ -235,7 +312,7 @@
                 <div class="bg-white rounded-xl overflow-hidden card-shadow group relative aspect-[3/4]">
                     <img src="${i.image}" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                        <button onclick="deleteItem('${i.id}')" class="bg-red-500 text-white p-2 rounded-full">🗑️</button>
+                        <button onclick="deleteItem('${i.id}')" class="bg-red-500 text-white p-2 rounded-full transform hover:scale-110 transition">🗑️</button>
                     </div>
                 </div>
             `).join('');
@@ -245,14 +322,23 @@
         window.generateDailyOutfit = () => {
             const ts = clothes.filter(i => i.category === 'tops');
             const bs = clothes.filter(i => i.category === 'bottoms');
-            if (ts.length === 0 || bs.length === 0) { showToast("請先上傳衣服"); return; }
+            const out = clothes.filter(i => i.category === 'outerwear');
+
+            if (ts.length === 0 || bs.length === 0) { showToast("請先上傳至少一件上衣與下身"); return; }
+            
             const selT = ts[Math.floor(Math.random() * ts.length)];
             const selB = bs[Math.floor(Math.random() * bs.length)];
+            
             document.getElementById('outfit-display').classList.remove('hidden');
-            document.getElementById('outfit-reason').textContent = `依據氣象儀表板建議：這組搭配體感最舒適。`;
+            
+            let advice = `目前氣溫 ${currentTemp}°C，建議選擇透氣舒適的搭配。`;
+            if (currentTemp < 18) advice = `氣溫較低 (${currentTemp}°C)，建議搭配厚外套並注重保暖。`;
+            else if (currentTemp > 28) advice = `天氣炎熱 (${currentTemp}°C)，建議穿著短袖與輕便下身。`;
+
+            document.getElementById('outfit-reason').textContent = advice;
             document.getElementById('outfit-items').innerHTML = `
-                <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">上衣</span><img src="${selT.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
-                <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">下身</span><img src="${selB.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
+                <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">上衣</span><img src="${selT.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover border-2 border-white/20"></div>
+                <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">下身</span><img src="${selB.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover border-2 border-white/20"></div>
             `;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
