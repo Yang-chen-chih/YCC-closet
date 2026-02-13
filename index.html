@@ -104,11 +104,11 @@
             </div>
             <!-- API 錯誤警告 -->
             <div id="api-error" class="hidden mt-3 text-[10px] bg-amber-50 text-amber-600 p-2 rounded border border-amber-200">
-                ⚠️ 天氣服務連線不穩定。您可以嘗試手動切換城市，或使用系統預設建議。
+                ⚠️ GitHub HTTPS 連線成功，但 API 或定位暫時無回應。請嘗試手動切換城市。
             </div>
         </section>
 
-        <!-- 推薦穿搭顯示區 (同前) -->
+        <!-- 推薦穿搭顯示區 -->
         <section id="outfit-display" class="hidden mb-12">
             <div id="outfit-card" class="rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden transition-all duration-700">
                 <button onclick="document.getElementById('outfit-display').classList.add('hidden')" class="absolute top-4 right-4 text-white/70 hover:text-white">
@@ -122,7 +122,7 @@
             </div>
         </section>
 
-        <!-- 新增衣物 (同前) -->
+        <!-- 新增衣物 -->
         <section class="glass-panel rounded-2xl p-6 mb-12 card-shadow">
             <h2 class="text-lg font-bold mb-4 text-gray-800">新增衣服 (雲端同步)</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -163,18 +163,19 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase 設置由環境提供
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'closet-app-default';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'closet-app-prod';
 
         let user = null;
         let clothes = [];
         let currentTemp = 23;
         let currentRainChance = 0;
 
-        // 1. 初始化與同步
+        // 1. 初始化驗證
         const init = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -182,47 +183,61 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (e) { document.getElementById('cloud-status').textContent = "❌ 同步失敗"; }
+            } catch (e) { 
+                console.error("Auth Error", e);
+                document.getElementById('cloud-status').textContent = "❌ 同步連線中斷"; 
+            }
         };
 
         onAuthStateChanged(auth, (u) => {
             user = u;
             if (user) {
+                // 登入後啟動監聽與天氣抓取
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'clothes');
                 onSnapshot(q, (s) => {
                     clothes = s.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCloset();
-                });
-                fetchWeather(); 
+                }, (err) => console.error("Snapshot error", err));
+                
+                // 延遲一點點啟動天氣，確保網路資源優先給 Firebase
+                setTimeout(fetchWeather, 500);
             }
         });
 
         init();
 
-        // 2. 天氣核心邏輯 (強化連線與容錯)
+        // 2. 天氣與定位優化 (針對 GitHub Pages 調整)
         window.manualCityChange = () => {
             const val = document.getElementById('city-selector').value;
             if (val === 'auto') fetchWeather();
             else {
                 const [lat, lon] = val.split(',').map(Number);
-                updateWeather(lat, lon, "手動指定");
+                updateWeather(lat, lon, "手動選取");
             }
         };
 
         async function fetchWeather() {
             const locEl = document.getElementById('weather-location');
+            
+            // GitHub 必須在 HTTPS 下執行，檢查並提醒
+            if (window.location.protocol === 'http:' && window.location.hostname.includes('github.io')) {
+                updateWeather(25.03, 121.56, "⚠️ 請使用 HTTPS 瀏覽");
+                return;
+            }
+
             if (navigator.geolocation) {
                 locEl.textContent = "正在請求定位權限...";
+                // 增加 timeout 到 8000ms，給予使用者足夠時間點擊「允許」
                 navigator.geolocation.getCurrentPosition(
-                    (p) => updateWeather(p.coords.latitude, p.coords.longitude, "📍 自動定位"),
+                    (p) => updateWeather(p.coords.latitude, p.coords.longitude, "📍 自動定位成功"),
                     (e) => {
-                        console.warn("定位失敗", e);
-                        updateWeather(25.03, 121.56, "📍 定位失敗，預設臺北");
+                        console.warn("定位失敗", e.message);
+                        updateWeather(25.03, 121.56, "📍 定位受阻，預設臺北");
                     },
-                    { timeout: 4000 }
+                    { timeout: 8000, enableHighAccuracy: false }
                 );
             } else {
-                updateWeather(25.03, 121.56, "📍 瀏覽器不支援，預設臺北");
+                updateWeather(25.03, 121.56, "📍 設備不支援，預設臺北");
             }
         }
 
@@ -238,17 +253,13 @@
             errorEl.classList.add('hidden');
 
             try {
-                // 使用 HTTPS 請求 Open-Meteo
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒逾時
-
+                // 明確指定 https，避免 GitHub Pages 的安全性阻擋
                 const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability&timezone=auto`;
                 
-                const response = await fetch(apiUrl, { signal: controller.signal });
-                if (!response.ok) throw new Error("API 回應異常");
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("API 無法回應");
                 
                 const data = await response.json();
-                clearTimeout(timeoutId);
 
                 currentTemp = Math.round(data.current_weather.temperature);
                 const hourIdx = new Date().getHours();
@@ -257,22 +268,24 @@
                 tempEl.textContent = `${currentTemp}°C`;
                 rainEl.textContent = `${currentRainChance}%`;
                 
-                const codes = { 0: ["晴朗", "☀️"], 1: ["晴間多雲", "🌤️"], 2: ["多雲", "⛅"], 3: ["陰天", "☁️"], 45: ["霧", "🌫️"], 61: ["小雨", "🌧️"], 95: ["雷雨", "⛈️"] };
+                const codes = { 
+                    0: ["晴朗", "☀️"], 1: ["晴間多雲", "🌤️"], 2: ["多雲", "⛅"], 3: ["陰天", "☁️"], 
+                    45: ["霧", "🌫️"], 61: ["小雨", "🌧️"], 95: ["雷雨", "⛈️"] 
+                };
                 const res = codes[data.current_weather.weathercode] || ["多雲", "☁️"];
                 descEl.textContent = res[0]; iconEl.textContent = res[1];
                 
                 updateTheme(currentTemp);
             } catch (err) {
-                console.error("天氣抓取失敗:", err);
+                console.error("Fetch failed", err);
                 errorEl.classList.remove('hidden');
-                // 發生錯誤時給予「安全值」避免界面顯示 --
-                tempEl.textContent = `22°C (預設)`;
+                tempEl.textContent = `22°C`;
                 descEl.textContent = "氣象離線中";
                 updateTheme(22);
             }
         }
 
-        // 3. 其他功能與渲染 (同前)
+        // 3. UI 渲染與其他功能 (與前版本一致)
         function updateTheme(t) {
             const root = document.documentElement;
             const card = document.getElementById('outfit-card');
@@ -290,17 +303,21 @@
             document.getElementById('loading-spinner').classList.remove('hidden');
             const reader = new FileReader();
             reader.onload = async (e) => {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'clothes'), {
-                    category: cat, image: e.target.result, createdAt: serverTimestamp()
-                });
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'clothes'), {
+                        category: cat, image: e.target.result, createdAt: serverTimestamp()
+                    });
+                    showToast("同步成功");
+                } catch(e) { showToast("同步失敗"); }
                 document.getElementById('loading-spinner').classList.add('hidden');
-                showToast("已同步");
             };
             reader.readAsDataURL(file);
         };
 
         window.deleteItem = async (id) => {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clothes', id));
+            if(confirm("確定刪除嗎？")) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clothes', id));
+            }
         };
 
         function renderCloset() {
@@ -319,13 +336,11 @@
         window.generateDailyOutfit = () => {
             const ts = clothes.filter(i => i.category === 'tops');
             const bs = clothes.filter(i => i.category === 'bottoms');
-            if (ts.length === 0 || bs.length === 0) { showToast("請先上傳上衣和下身照片"); return; }
-            
+            if (ts.length === 0 || bs.length === 0) { showToast("請先上傳衣服"); return; }
             const selT = ts[Math.floor(Math.random() * ts.length)];
             const selB = bs[Math.floor(Math.random() * bs.length)];
-            
             document.getElementById('outfit-display').classList.remove('hidden');
-            document.getElementById('outfit-reason').textContent = `今日 ${currentTemp}°C，推薦您清爽穿搭。`;
+            document.getElementById('outfit-reason').textContent = `今日 ${currentTemp}°C，推薦您這套組合。`;
             document.getElementById('outfit-items').innerHTML = `
                 <div class="flex flex-col items-center"><span class="text-[10px] mb-1">上衣</span><img src="${selT.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
                 <div class="flex flex-col items-center"><span class="text-[10px] mb-1">下身</span><img src="${selB.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
@@ -335,7 +350,7 @@
 
         function showToast(m) {
             const t = document.getElementById('toast'); t.textContent = m;
-            t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 2000);
+            t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 2500);
         }
     </script>
 </body>
