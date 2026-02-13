@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的數位衣櫥</title>
+    <title>數位衣櫃</title>
     <link rel="icon" href="64衣櫃icon.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -66,10 +66,14 @@
     <header class="bg-white/80 backdrop-blur border-b sticky top-0 z-50">
         <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-2xl font-bold dynamic-text flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                <!-- 衣櫃圖示 SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 5h18v14H3z"></path>
+                    <path d="M12 5v14"></path>
+                    <path d="M9 11v2"></path>
+                    <path d="M15 11v2"></path>
                 </svg>
-                MyCloset <span class="text-xs font-normal opacity-50">Cloud</span>
+                數位衣櫃
             </h1>
             <div class="flex items-center gap-2">
                 <div id="loading-spinner" class="loader hidden"></div>
@@ -149,7 +153,7 @@
         <!-- Gallery -->
         <section>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">雲端衣櫥內容</h2>
+                <h2 class="text-2xl font-bold text-gray-800">雲端衣櫃內容</h2>
                 <div class="flex gap-2 text-sm overflow-x-auto pb-2 sm:pb-0">
                     <button onclick="filterCloset('all')" class="category-btn active bg-white text-gray-800 px-4 py-1.5 rounded-full font-bold whitespace-nowrap shadow-sm border border-gray-100">全部</button>
                     <button onclick="filterCloset('tops')" class="category-btn bg-white/40 text-gray-700 px-4 py-1.5 rounded-full whitespace-nowrap">上衣</button>
@@ -210,7 +214,6 @@
         function setupRealtimeListener() {
             if (!user) return;
             
-            // Publicly shared data path as per Rule 1
             const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'clothes');
             
             onSnapshot(collectionRef, (snapshot) => {
@@ -278,12 +281,13 @@
         let currentFilter = 'all';
         window.filterCloset = (cat) => {
             currentFilter = cat;
-            // Update UI buttons
             document.querySelectorAll('.category-btn').forEach(btn => {
                 btn.classList.remove('active', 'bg-white', 'font-bold', 'shadow-sm', 'border-gray-100');
                 btn.classList.add('bg-white/40', 'text-gray-700');
             });
-            event.target.classList.add('active', 'bg-white', 'font-bold', 'shadow-sm', 'border-gray-100');
+            if (event && event.target.classList.contains('category-btn')) {
+                event.target.classList.add('active', 'bg-white', 'font-bold', 'shadow-sm', 'border-gray-100');
+            }
             renderCloset();
         };
 
@@ -294,7 +298,6 @@
 
             const filteredItems = currentFilter === 'all' ? clothes : clothes.filter(i => i.category === currentFilter);
             
-            // Simple sort by timestamp in memory (Rule 2)
             filteredItems.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
             if (filteredItems.length === 0) {
@@ -317,7 +320,7 @@
             }
         }
 
-        // 6. Weather & Suggestion (Integrated from previous version)
+        // 6. Weather & Suggestion
         let currentTemp = 25;
         let currentRainChance = 0;
 
@@ -410,6 +413,4 @@
         }
     </script>
 </body>
-
 </html>
-
