@@ -86,7 +86,7 @@
 
     <main class="max-w-4xl mx-auto px-4 mt-6">
         
-        <!-- Weather Section -->
+        <!-- 天氣區塊 -->
         <section id="weather-widget" class="mb-8 glass-panel rounded-2xl p-6 card-shadow flex flex-wrap items-center justify-between overflow-hidden relative">
             <div class="z-10 flex-1 min-w-[200px]">
                 <p class="text-gray-500 text-sm font-bold uppercase tracking-wider">今日天氣概況</p>
@@ -109,7 +109,7 @@
             </div>
         </section>
 
-        <!-- Outfit Suggestion Section -->
+        <!-- 推薦穿搭顯示區 -->
         <section id="outfit-display" class="hidden mb-12">
             <div id="outfit-card" class="rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden transition-all duration-700">
                 <button onclick="document.getElementById('outfit-display').classList.add('hidden')" class="absolute top-4 right-4 text-white/70 hover:text-white">
@@ -122,12 +122,12 @@
                     <p id="outfit-reason" class="text-white text-sm mt-3 bg-black/10 p-4 rounded-2xl border border-white/20 leading-relaxed"></p>
                 </div>
                 <div id="outfit-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    <!-- Items -->
+                    <!-- 穿搭單品內容 -->
                 </div>
             </div>
         </section>
 
-        <!-- Add Item -->
+        <!-- 新增衣物表單 -->
         <section class="glass-panel rounded-2xl p-6 mb-12 card-shadow">
             <h2 class="text-lg font-bold mb-4 text-gray-800">新增衣服 (雲端同步)</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -150,7 +150,7 @@
             </div>
         </section>
 
-        <!-- Gallery -->
+        <!-- 衣櫃列表 -->
         <section>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">雲端衣櫃內容</h2>
@@ -162,7 +162,7 @@
             </div>
 
             <div id="closet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                <!-- Items will be loaded from Firestore -->
+                <!-- 由 Firestore 載入 -->
             </div>
             
             <div id="empty-state" class="text-center py-20 hidden">
@@ -181,7 +181,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, doc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Configuration (Inject environment variables)
+        // Firebase 設定
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -191,7 +191,7 @@
         let user = null;
         let clothes = [];
 
-        // 1. Authentication
+        // 1. 身分驗證
         const initAuth = async () => {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
@@ -210,12 +210,10 @@
 
         initAuth();
 
-        // 2. Real-time Database Listener
+        // 2. 即時資料監聽器
         function setupRealtimeListener() {
             if (!user) return;
-            
             const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'clothes');
-            
             onSnapshot(collectionRef, (snapshot) => {
                 clothes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderCloset();
@@ -224,10 +222,9 @@
             });
         }
 
-        // 3. Add Item to Firestore
+        // 3. 上傳衣物
         window.addItem = async () => {
             if (!user) return;
-            
             const category = document.getElementById('item-category').value;
             const fileInput = document.getElementById('item-image');
             const file = fileInput.files[0];
@@ -248,7 +245,7 @@
                     const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'clothes');
                     await addDoc(collectionRef, {
                         category,
-                        image: event.target.result, // Base64 string
+                        image: event.target.result,
                         userId: user.uid,
                         createdAt: serverTimestamp()
                     });
@@ -265,7 +262,7 @@
             reader.readAsDataURL(file);
         };
 
-        // 4. Delete from Firestore
+        // 4. 刪除衣物
         window.deleteItem = async (docId) => {
             if (!user) return;
             try {
@@ -277,7 +274,7 @@
             }
         };
 
-        // 5. Render Logic
+        // 5. 渲染邏輯
         let currentFilter = 'all';
         window.filterCloset = (cat) => {
             currentFilter = cat;
@@ -297,7 +294,6 @@
             grid.innerHTML = "";
 
             const filteredItems = currentFilter === 'all' ? clothes : clothes.filter(i => i.category === currentFilter);
-            
             filteredItems.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 
             if (filteredItems.length === 0) {
@@ -320,7 +316,7 @@
             }
         }
 
-        // 6. Weather & Suggestion
+        // 6. 天氣與建議
         let currentTemp = 25;
         let currentRainChance = 0;
 
