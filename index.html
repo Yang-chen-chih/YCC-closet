@@ -74,7 +74,7 @@
 
     <main class="max-w-5xl mx-auto px-4 mt-6">
         
-        <!-- 天氣與功能並排區塊 (不自動堆疊) -->
+        <!-- 天氣與功能並排區塊 -->
         <div class="grid grid-cols-2 gap-3 md:gap-6 mb-8">
             
             <!-- 天氣區塊 -->
@@ -83,12 +83,12 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                         <p class="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider">目前氣象</p>
                         <select id="city-selector" onchange="manualCityChange()" class="text-[10px] md:text-xs bg-gray-100 border border-gray-200 rounded px-1 py-0.5 outline-none">
-                            <option value="auto">📍 自動</option>
-                            <option value="25.03,121.56">臺北</option>
-                            <option value="24.14,120.67">臺中</option>
-                            <option value="22.62,120.30">高雄</option>
-                            <option value="24.81,120.96">新竹</option>
-                            <option value="22.99,120.21">臺南</option>
+                            <option value="auto">📍 自動定位</option>
+                            <option value="25.03,121.56">臺北市</option>
+                            <option value="24.14,120.67">臺中市</option>
+                            <option value="22.62,120.30">高雄市</option>
+                            <option value="24.81,120.96">新竹市</option>
+                            <option value="22.99,120.21">臺南市</option>
                         </select>
                     </div>
                     <div class="flex items-center gap-2 md:gap-6">
@@ -104,9 +104,9 @@
                         </div>
                     </div>
                 </div>
-                <p id="weather-location" class="text-[9px] md:text-[10px] text-gray-400 mt-4 font-mono truncate">定位中...</p>
+                <p id="weather-location" class="text-[9px] md:text-[10px] text-gray-400 mt-4 font-mono truncate">定位初始化中...</p>
                 <div id="api-error" class="hidden mt-2 text-[9px] bg-amber-50 text-amber-600 p-1 rounded border border-amber-200">
-                    ⚠️ API 無回應
+                    ⚠️ API 無回應，請手動切換城市
                 </div>
             </section>
 
@@ -204,7 +204,9 @@
                     clothes = s.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCloset();
                 }, (err) => console.error("Snapshot error", err));
-                setTimeout(fetchWeather, 500);
+                
+                // 啟動天氣流程
+                fetchWeather();
             }
         });
 
@@ -212,32 +214,49 @@
 
         window.manualCityChange = () => {
             const val = document.getElementById('city-selector').value;
-            if (val === 'auto') fetchWeather();
-            else {
+            if (val === 'auto') {
+                fetchWeather();
+            } else {
                 const [lat, lon] = val.split(',').map(Number);
-                updateWeather(lat, lon, "手動選取");
+                const cityName = document.querySelector(`#city-selector option[value="${val}"]`).text;
+                updateWeather(lat, lon, `📍 ${cityName}`);
             }
         };
 
         async function fetchWeather() {
             const locEl = document.getElementById('weather-location');
+            
+            // 安全檢查：若非 HTTPS 且在 github.io
             if (window.location.protocol === 'http:' && window.location.hostname.includes('github.io')) {
-                updateWeather(25.03, 121.56, "⚠️ 請使用 HTTPS 瀏覽");
+                updateWeather(25.03, 121.56, "⚠️ 非安全連線，預設臺北");
                 return;
             }
 
             if (navigator.geolocation) {
                 locEl.textContent = "正在請求定位權限...";
+                
+                // 設定一個超時保險，防止使用者沒點權限導致畫面卡死
+                const timeoutId = setTimeout(() => {
+                    if (document.getElementById('weather-temp').textContent === '--°C') {
+                        console.warn("定位逾時，改用預設城市");
+                        updateWeather(25.03, 121.56, "📍 定位逾時，預設臺北");
+                    }
+                }, 5000);
+
                 navigator.geolocation.getCurrentPosition(
-                    (p) => updateWeather(p.coords.latitude, p.coords.longitude, "📍 自動定位成功"),
+                    (p) => {
+                        clearTimeout(timeoutId);
+                        updateWeather(p.coords.latitude, p.coords.longitude, "📍 自動定位成功");
+                    },
                     (e) => {
-                        console.warn("定位失敗", e.message);
+                        clearTimeout(timeoutId);
+                        console.warn("定位失敗:", e.message);
                         updateWeather(25.03, 121.56, "📍 定位受阻，預設臺北");
                     },
-                    { timeout: 8000, enableHighAccuracy: false }
+                    { timeout: 4500, enableHighAccuracy: false }
                 );
             } else {
-                updateWeather(25.03, 121.56, "📍 設備不支援，預設臺北");
+                updateWeather(25.03, 121.56, "📍 不支援定位，預設臺北");
             }
         }
 
@@ -249,13 +268,15 @@
             const locEl = document.getElementById('weather-location');
             const errorEl = document.getElementById('api-error');
 
-            locEl.textContent = `${label} (${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+            locEl.textContent = label;
             errorEl.classList.add('hidden');
 
             try {
+                // 明確使用 https 開頭的 API 網址
                 const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability&timezone=auto`;
+                
                 const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error("API 無法回應");
+                if (!response.ok) throw new Error("API 無回應");
                 const data = await response.json();
 
                 currentTemp = Math.round(data.current_weather.temperature);
@@ -272,8 +293,9 @@
             } catch (err) {
                 console.error("Fetch failed", err);
                 errorEl.classList.remove('hidden');
+                // 發生錯誤時顯示一個預設溫和氣溫
                 tempEl.textContent = `22°C`;
-                descEl.textContent = "氣象離線中";
+                descEl.textContent = "氣象離線";
                 updateTheme(22);
             }
         }
@@ -332,7 +354,7 @@
             const selT = ts[Math.floor(Math.random() * ts.length)];
             const selB = bs[Math.floor(Math.random() * bs.length)];
             document.getElementById('outfit-display').classList.remove('hidden');
-            document.getElementById('outfit-reason').textContent = `今日 ${currentTemp}°C，推薦您這套組合。`;
+            document.getElementById('outfit-reason').textContent = `今日約 ${currentTemp}°C，推薦您這套組合。`;
             document.getElementById('outfit-items').innerHTML = `
                 <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">上衣</span><img src="${selT.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
                 <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">下身</span><img src="${selB.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
