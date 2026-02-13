@@ -41,6 +41,15 @@
             transition: background-color 0.5s ease;
         }
 
+        /* 針對 iframe 的封裝樣式 */
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
         .loader {
             border: 3px solid #f3f3f3;
             border-radius: 50%;
@@ -77,35 +86,15 @@
         <!-- 天氣與功能區域 -->
         <div class="grid grid-cols-2 gap-3 md:gap-6 mb-8">
             
-            <!-- 天氣區塊 (參考 Open-Meteo) -->
-            <section id="weather-widget" class="glass-panel rounded-2xl p-4 md:p-6 card-shadow flex flex-col justify-between overflow-hidden relative">
-                <div>
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
-                        <p class="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider">即時氣象 (Open-Meteo)</p>
-                        <select id="city-selector" onchange="handleLocationChange()" class="text-[10px] md:text-xs bg-gray-100 border border-gray-200 rounded px-1 py-0.5 outline-none">
-                            <option value="auto">📍 自動定位</option>
-                            <option value="25.03,121.56">臺北市</option>
-                            <option value="25.01,121.46">新北市</option>
-                            <option value="24.14,120.67">臺中市</option>
-                            <option value="22.62,120.30">高雄市</option>
-                            <option value="24.81,120.96">新竹市</option>
-                            <option value="22.99,120.21">臺南市</option>
-                        </select>
-                    </div>
-                    <div class="flex items-center gap-2 md:gap-6">
-                        <div id="weather-icon-container" class="text-3xl md:text-6xl">☁️</div>
-                        <div class="flex flex-col">
-                            <div class="flex flex-col md:flex-row md:items-baseline md:gap-1">
-                                <span id="weather-temp" class="text-2xl md:text-5xl font-extrabold text-gray-800">--°C</span>
-                                <span id="weather-desc" class="text-gray-600 font-medium text-xs md:text-base">讀取中...</span>
-                            </div>
-                            <div class="flex items-center gap-1 text-blue-600 text-[10px] md:text-sm mt-1">
-                                <span class="hidden sm:inline">🌧️ 降雨：</span><span class="sm:hidden">🌧️</span><span id="weather-rain" class="font-bold">--%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <p id="weather-location" class="text-[9px] md:text-[10px] text-gray-400 mt-4 font-mono truncate">初始化定位中...</p>
+            <!-- 天氣區塊：改為鑲嵌外部網頁 -->
+            <section id="weather-widget" class="glass-panel rounded-2xl p-2 md:p-3 card-shadow flex flex-col overflow-hidden relative min-h-[180px]">
+                <p class="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-wider mb-2 ml-2">即時氣象儀表板</p>
+                <!-- 鑲嵌指定的網址 -->
+                <iframe 
+                    src="https://456123qp.github.io/test/" 
+                    class="iframe-container"
+                    title="Weather Dashboard">
+                </iframe>
             </section>
 
             <!-- 新增衣物區塊 -->
@@ -142,7 +131,7 @@
                 </button>
                 <div class="mb-6">
                     <h2 class="text-xl font-bold">今日推薦穿搭</h2>
-                    <p id="outfit-reason" class="text-sm mt-3 bg-black/10 p-4 rounded-2xl border border-white/20"></p>
+                    <p id="outfit-reason" class="text-sm mt-3 bg-black/10 p-4 rounded-2xl border border-white/20">正在分析氣溫以提供最佳搭配...</p>
                 </div>
                 <div id="outfit-items" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
             </div>
@@ -175,14 +164,7 @@
 
         let user = null;
         let clothes = [];
-        let currentTemp = 23;
-
-        // 氣象代碼對應
-        const weatherCodeMap = {
-            0: ["晴朗", "☀️"], 1: ["晴間多雲", "🌤️"], 2: ["多雲", "⛅"], 3: ["陰天", "☁️"],
-            45: ["霧", "🌫️"], 48: ["霧", "🌫️"], 61: ["小雨", "🌧️"], 63: ["雨", "🌧️"],
-            95: ["雷雨", "⛈️"]
-        };
+        let currentTemp = 23; // 預設值，之後可透過與 iframe 溝通獲取
 
         onAuthStateChanged(auth, (u) => {
             user = u;
@@ -192,7 +174,6 @@
                     clothes = s.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCloset();
                 });
-                autoLocateWeather();
             }
         });
 
@@ -205,66 +186,13 @@
         };
         initAuth();
 
-        // 核心氣象抓取邏輯 (Open-Meteo)
-        async function fetchOpenMeteo(lat, lon, label) {
-            const tempEl = document.getElementById('weather-temp');
-            const descEl = document.getElementById('weather-desc');
-            const rainEl = document.getElementById('weather-rain');
-            const iconEl = document.getElementById('weather-icon-container');
-            const locEl = document.getElementById('weather-location');
-
-            try {
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=precipitation_probability&timezone=auto`;
-                const response = await fetch(url);
-                const data = await response.json();
-
-                const weather = data.current_weather;
-                currentTemp = Math.round(weather.temperature);
-                
-                // 取得當前小時的降雨機率
-                const hourIdx = new Date().getHours();
-                const rainProb = data.hourly.precipitation_probability[hourIdx] || 0;
-
-                const [desc, icon] = weatherCodeMap[weather.weathercode] || ["多雲", "☁️"];
-
-                tempEl.textContent = `${currentTemp}°C`;
-                descEl.textContent = desc;
-                iconEl.textContent = icon;
-                rainEl.textContent = `${rainProb}%`;
-                locEl.textContent = label;
-
+        // 監聽 iframe 傳來的訊息 (選用功能：如果 test 網頁有下發氣溫數據)
+        window.addEventListener("message", (event) => {
+            if (event.data && event.data.type === "WEATHER_UPDATE") {
+                currentTemp = event.data.temp;
                 updateTheme(currentTemp);
-            } catch (err) {
-                console.error("Weather fetch error:", err);
-                tempEl.textContent = "--°C";
-                descEl.textContent = "讀取失敗";
             }
-        }
-
-        window.autoLocateWeather = () => {
-            const locEl = document.getElementById('weather-location');
-            if (navigator.geolocation) {
-                locEl.textContent = "正在自動定位...";
-                navigator.geolocation.getCurrentPosition(
-                    (p) => fetchOpenMeteo(p.coords.latitude, p.coords.longitude, "📍 自動定位成功"),
-                    (e) => fetchOpenMeteo(25.03, 121.56, "📍 定位受限，預設臺北"),
-                    { timeout: 5000 }
-                );
-            } else {
-                fetchOpenMeteo(25.03, 121.56, "📍 不支援定位，預設臺北");
-            }
-        };
-
-        window.handleLocationChange = () => {
-            const val = document.getElementById('city-selector').value;
-            if (val === "auto") {
-                autoLocateWeather();
-            } else {
-                const [lat, lon] = val.split(',').map(Number);
-                const cityName = document.querySelector(`#city-selector option[value="${val}"]`).textContent;
-                fetchOpenMeteo(lat, lon, `📍 ${cityName}`);
-            }
-        };
+        }, false);
 
         function updateTheme(t) {
             const root = document.documentElement;
@@ -275,7 +203,6 @@
             if (card) card.style.background = grad;
         }
 
-        // 衣櫃功能保持不變
         window.addItem = async () => {
             if (!user) return;
             const cat = document.getElementById('item-category').value;
@@ -322,7 +249,7 @@
             const selT = ts[Math.floor(Math.random() * ts.length)];
             const selB = bs[Math.floor(Math.random() * bs.length)];
             document.getElementById('outfit-display').classList.remove('hidden');
-            document.getElementById('outfit-reason').textContent = `依據 Open-Meteo 最新氣溫 ${currentTemp}°C 建議：這組搭配體感最舒適。`;
+            document.getElementById('outfit-reason').textContent = `依據氣象儀表板建議：這組搭配體感最舒適。`;
             document.getElementById('outfit-items').innerHTML = `
                 <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">上衣</span><img src="${selT.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
                 <div class="flex flex-col items-center"><span class="text-[10px] mb-1 text-white/70">下身</span><img src="${selB.image}" class="rounded-lg shadow-lg aspect-[3/4] object-cover"></div>
