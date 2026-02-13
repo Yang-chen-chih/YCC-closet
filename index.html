@@ -3,176 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數位衣櫃</title>
+    <title>數位衣櫃 - 天氣心情聯動版</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         
         :root {
-            --bg-color: #F8F9FA; 
-            --primary-color: #333333; 
-            --accent-color: #4F46E5; 
+            --bg-dynamic: #F8F8F8;
+            --accent-dynamic: #5D5FEF;
+            --btn-shadow: rgba(93, 95, 239, 0.3);
         }
 
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: var(--bg-color);
-            transition: background-color 1.2s ease;
+            background-color: var(--bg-dynamic);
+            color: #333;
             min-height: 100vh;
+            transition: background-color 1.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .glass-panel {
             background-color: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
         }
 
-        .dynamic-button {
-            background-color: var(--accent-color);
-            transition: all 0.5s ease;
+        .top-row-container {
+            display: flex;
+            flex-direction: row; 
+            gap: 16px;
+            align-items: stretch;
+            margin-bottom: 20px;
+            padding: 0 4px;
         }
 
-        /* 第三行心情建議的顏色隨主題變化 */
-        .mood-text {
-            color: var(--accent-color);
-            transition: color 0.8s ease;
+        .weather-section {
+            flex: 0 0 30%;
+            min-width: 280px;
         }
 
-        .custom-file-upload {
+        .add-item-section {
+            flex: 1;
+        }
+
+        .input-style {
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 12px;
+            padding: 0 14px;
+            height: 48px;
+            width: 100%;
+            outline: none;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .input-style:focus {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-color: var(--accent-dynamic);
+        }
+
+        .input-label {
+            display: block;
+            font-size: 10px;
+            font-weight: 800;
+            color: rgba(0,0,0,0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+            margin-left: 2px;
+        }
+
+        .upload-box {
+            background-color: rgba(255, 255, 255, 0.4);
+            border: 2px dashed rgba(0,0,0,0.1);
+            border-radius: 12px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1.5px dashed rgba(0, 0, 0, 0.1);
-            border-radius: 0.5rem;
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.4);
-            height: 42px;
-            font-size: 0.875rem;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.2s;
         }
 
-        input, select {
-            height: 42px;
-            font-size: 0.875rem !important;
+        .btn-dynamic-primary {
+            background-color: var(--accent-dynamic); 
+            color: white;
+            border-radius: 14px;
+            font-weight: 800;
+            width: 100%;
+            height: 50px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px var(--btn-shadow);
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(5px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-5px); }
+        }
+        .mood-quote {
+            animation: fadeInOut 6s infinite;
         }
 
         #item-image { display: none; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
     </style>
 </head>
-<body class="pb-10">
+<body class="p-4 md:p-8 lg:px-16">
 
-    <header class="bg-white/50 backdrop-blur-md border-b sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2 text-gray-800">
-                <span class="text-2xl">🧥</span> 數位衣櫃
-            </h1>
-            <div class="flex items-center gap-2">
-                <button onclick="generateOutfit('random')" class="bg-gray-800 text-white px-4 py-2 rounded-full text-xs font-medium shadow hover:bg-gray-700 transition">
-                    🎲 隨機穿搭
-                </button>
-                <button onclick="generateOutfit('smart')" class="dynamic-button text-white px-4 py-2 rounded-full text-xs font-medium shadow hover:opacity-90 transition">
-                    ✨ 智慧推薦
-                </button>
-            </div>
-        </div>
-    </header>
+    <main class="max-w-6xl mx-auto">
+        <div class="top-row-container">
+            <!-- 左：天氣資訊 -->
+            <section class="weather-section">
+                <div class="glass-panel p-6 h-full flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Weather</span>
+                            <span class="text-[9px] font-bold text-gray-400">臺北市</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-4 mb-6">
+                            <div id="weather-icon" class="text-5xl">🌤️</div>
+                            <div>
+                                <span id="weather-temp" class="text-4xl font-black tracking-tighter text-zinc-800">--°C</span>
+                                <div id="weather-desc" class="text-xs font-bold text-gray-500">讀取中...</div>
+                            </div>
+                        </div>
 
-    <main class="max-w-4xl mx-auto px-4 mt-8">
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            
-            <!-- 氣象卡片 -->
-            <section class="glass-panel rounded-2xl p-6 shadow-sm flex flex-col justify-between border-gray-100">
-                <div>
-                    <div class="flex justify-between items-start mb-4">
-                        <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Weather</h2>
-                        <span id="weather-status-tag" class="text-xs text-gray-400">臺北市</span>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div id="weather-icon" class="text-5xl">🌤️</div>
-                        <div>
-                            <span id="weather-temp" class="text-4xl font-bold text-gray-800 tracking-tight">--°C</span>
-                            <div class="flex items-center gap-2">
-                                <p id="weather-desc" class="text-sm text-gray-500 font-medium">讀取中...</p>
-                                <span id="weather-rain" class="text-xs text-blue-500 font-bold hidden">☔ --%</span>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="text-[9px] font-black text-gray-400 uppercase mb-1">今日概況</h4>
+                                <p id="weather-summary" class="text-xs font-bold text-zinc-700 leading-snug">正在獲取資訊...</p>
+                            </div>
+                            <div>
+                                <h4 class="text-[9px] font-black text-gray-400 uppercase mb-1">雨具建議</h4>
+                                <p id="umbrella-advice" class="text-xs font-black text-zinc-800">偵測中</p>
+                                <p id="weather-rain-text" class="text-[9px] font-bold text-gray-400">降雨機率 --%</p>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="mt-6 pt-4 border-t border-gray-100 space-y-2">
-                    <!-- 調小字體為 text-xs (兩行小字) -->
-                    <p id="suggest-desc" class="text-xs text-gray-400 leading-relaxed"></p>
-                    <p id="suggest-umbrella" class="text-xs text-gray-400 leading-relaxed"></p>
-                    <!-- 第三行保持原本大小並隨主題變色 -->
-                    <p id="suggest-mood" class="text-base font-bold mood-text mt-1"></p>
+
+                    <!-- 聯動心情小語區塊 -->
+                    <div class="mt-6 pt-4 border-t border-black/5 min-h-[70px] flex flex-col justify-center">
+                        <h4 id="mood-label" class="text-[9px] font-black uppercase mb-1 tracking-widest transition-colors duration-1000">Daily Mood</h4>
+                        <p id="mood-quote-display" class="mood-quote text-xs font-bold italic transition-colors duration-1000"></p>
+                    </div>
                 </div>
             </section>
 
-            <!-- 新增衣物 -->
-            <section class="md:col-span-2 glass-panel rounded-2xl p-6 shadow-sm">
-                <h2 class="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2">
-                    <span class="text-indigo-500">＋</span> 新增衣物
-                </h2>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-bold text-gray-400 uppercase">種類</label>
-                        <select id="item-category" class="w-full border-gray-200 rounded-xl px-3 bg-white/50 text-sm outline-none focus:ring-2 focus:ring-indigo-200">
-                            <option value="tops">上衣 (Tops)</option>
-                            <option value="bottoms">下身 (Bottoms)</option>
-                            <option value="outerwear">外套 (Outerwear)</option>
-                            <option value="shoes">鞋子 (Shoes)</option>
-                        </select>
+            <!-- 右：新增衣物表單 -->
+            <section class="add-item-section">
+                <div class="glass-panel p-6 h-full">
+                    <div class="flex items-center gap-2 mb-6">
+                        <i data-lucide="plus-circle" class="text-indigo-600 w-5 h-5" id="form-icon"></i>
+                        <h2 class="text-xl font-black text-zinc-800 tracking-tight">新增衣物</h2>
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-bold text-gray-400 uppercase">保暖分 (0-100)</label>
-                        <input type="number" id="item-warmth" min="0" max="100" value="50" class="w-full border-gray-200 rounded-xl px-3 bg-white/50 text-sm outline-none focus:ring-2 focus:ring-indigo-200">
+
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div>
+                            <label class="input-label">種類</label>
+                            <select id="item-category" class="input-style">
+                                <option value="tops">上衣 (Tops)</option>
+                                <option value="bottoms">下身 (Bottoms)</option>
+                                <option value="outerwear">外套 (Outerwear)</option>
+                                <option value="shoes">鞋子 (Shoes)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="input-label">保暖度 (0-100)</label>
+                            <input type="number" id="item-warmth" value="50" class="input-style">
+                        </div>
+                        <div>
+                            <label class="input-label">衣物照片</label>
+                            <label for="item-image" class="upload-box">
+                                <span id="file-name-display" class="truncate px-2">選擇檔案</span>
+                            </label>
+                            <input type="file" id="item-image" accept="image/*" onchange="updateFileName(this)">
+                        </div>
                     </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-bold text-gray-400 uppercase">照片</label>
-                        <label for="item-image" class="custom-file-upload">
-                            <span id="file-name-display" class="truncate px-3 text-gray-400">點擊上傳</span>
-                        </label>
-                        <input type="file" id="item-image" accept="image/*" onchange="updateFileName(this)">
-                    </div>
+
+                    <button onclick="addItem()" class="btn-dynamic-primary text-sm flex items-center justify-center gap-2" id="save-btn">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        儲存至衣櫃
+                    </button>
                 </div>
-                <button onclick="addItem()" class="dynamic-button w-full text-white mt-6 py-3 rounded-xl font-bold shadow-md transition hover:brightness-105">
-                    儲存到衣櫃
-                </button>
             </section>
         </div>
 
-        <!-- 穿搭結果區 -->
-        <section id="outfit-display" class="hidden mb-12">
-            <div class="rounded-3xl p-8 text-white shadow-xl relative overflow-hidden bg-gray-900 border border-white/5">
-                <button onclick="document.getElementById('outfit-display').classList.add('hidden')" class="absolute top-6 right-6 text-white/40 hover:text-white transition">✕</button>
-                <div class="flex flex-col md:flex-row gap-8 items-center">
-                    <div class="flex-1 text-center md:text-left">
-                        <div id="outfit-tag" class="inline-block px-3 py-1 rounded-full bg-white/10 text-[10px] font-bold tracking-widest mb-3 text-indigo-300 uppercase">Today's Look</div>
-                        <h2 id="outfit-title" class="text-3xl font-bold mb-3">今日穿搭</h2>
-                        <p id="outfit-reason" class="text-sm opacity-70 mb-6 leading-relaxed max-w-md"></p>
-                        <div class="flex gap-4 justify-center md:justify-start">
-                            <div class="bg-white/5 px-4 py-2 rounded-xl text-xs">平均保暖度：<span id="current-avg-val" class="font-bold">--</span></div>
-                        </div>
-                    </div>
-                    <div id="outfit-items" class="flex gap-3 overflow-x-auto pb-2 px-2"></div>
+        <section class="mt-6 px-1">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
+                <h2 class="text-2xl font-black text-zinc-900 flex items-center gap-2">
+                    我的衣櫥
+                    <span id="item-count" class="text-[10px] font-bold bg-white px-2 py-0.5 rounded-full text-zinc-400 shadow-sm border border-black/5">0</span>
+                </h2>
+                <div class="flex gap-2">
+                    <button onclick="generateOutfit('recommend')" class="bg-white/70 border border-white/50 backdrop-blur-md px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 font-black transition-all hover:bg-white" id="rec-btn">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i> 推薦穿搭
+                    </button>
+                    <button onclick="generateOutfit('random')" class="bg-zinc-900 text-white px-4 py-2.5 rounded-xl text-xs hover:bg-black transition flex items-center gap-2 shadow-md font-black">
+                        <i data-lucide="shuffle" class="w-4 h-4"></i> 隨機穿搭
+                    </button>
                 </div>
             </div>
+            <div id="closet-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
+            <div id="empty-state" class="text-center py-20 bg-white/30 backdrop-blur rounded-[32px] border-2 border-dashed border-white/50 hidden">
+                <p class="text-gray-400 font-bold text-xs uppercase tracking-widest">Empty Closet</p>
+            </div>
         </section>
 
-        <!-- 我的衣櫥 -->
-        <section>
-            <div class="flex justify-between items-end mb-6 px-1">
-                <h2 class="text-2xl font-bold text-gray-800">我的衣櫥</h2>
-                <span class="text-xs font-bold text-gray-400 tracking-widest">PERSONAL CLOSET</span>
+        <!-- 模態框 -->
+        <div id="outfit-modal" class="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 hidden p-6">
+            <div class="bg-white/95 backdrop-blur-xl rounded-[40px] w-full max-w-lg p-10 relative shadow-2xl">
+                <button onclick="closeModal()" class="absolute top-8 right-8 text-gray-300 hover:text-zinc-800 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <div class="mb-8">
+                    <span id="modal-tag" class="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-2 block">Recommendation</span>
+                    <h3 id="modal-title" class="text-2xl font-black text-zinc-900">今日穿搭提案</h3>
+                    <p id="modal-desc" class="text-gray-500 font-bold text-sm mt-2 leading-relaxed"></p>
+                </div>
+                <div id="modal-items" class="flex gap-4 overflow-x-auto pb-6 snap-center"></div>
+                <div class="flex justify-end">
+                    <button onclick="closeModal()" class="px-8 py-3 bg-zinc-900 text-white text-xs font-black rounded-xl hover:bg-black transition">關閉</button>
+                </div>
             </div>
-            <div id="closet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
-            <div id="empty-state" class="text-center py-24 bg-white/30 rounded-3xl border-2 border-dashed border-gray-200 hidden">
-                <p class="text-gray-400">衣櫃空空的，快把喜歡的衣服拍下來上傳吧！</p>
-            </div>
-        </section>
+        </div>
     </main>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl transition-opacity duration-300 opacity-0 pointer-events-none text-sm font-medium z-[100]"></div>
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-zinc-900/90 backdrop-blur text-white px-6 py-3 rounded-xl shadow-xl transition-all duration-300 opacity-0 pointer-events-none text-xs font-bold z-[100]"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -183,22 +249,60 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mini-closet-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'closet-pro-mood-link';
 
         let user = null;
         let clothes = [];
-        let weather = { temp: 25, desc: "晴天" };
+        let weatherThemeColor = "#5D5FEF";
+        let weatherData = { temp: 25, desc: "晴天", pop: 0, summary: "" };
 
-        onAuthStateChanged(auth, (u) => {
-            user = u;
-            if (user) {
-                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clothes'), (s) => {
-                    clothes = s.docs.map(d => ({ id: d.id, ...d.data() }));
-                    render();
-                }, (err) => console.error(err));
-                fetchWeather();
-            }
-        });
+        const moodQuotes = [
+            "享受這份寧靜 ☁️ ( ´◡` )",
+            "穿上最自信的衣服，去遇見更好的自己。",
+            "每一天都是新的畫布，你是自己的設計師。",
+            "今天的心情，由你的穿搭決定。✨",
+            "溫柔地對待世界，世界也會溫柔對你。",
+            "把平凡的日子，穿出不平凡的味道。",
+            "陽光正好，適合出門走走。☀️",
+            "慢下來，生活有很多細微的美好。",
+            "你是獨一無二的，風格也是。",
+            "對生活微笑，生活會回你一個大大的擁抱。",
+            "今天的努力，是為了明天更多的選擇。",
+            "保持好奇心，生活永遠新鮮。",
+            "舒適，是最高級的時尚。",
+            "深呼吸，感受當下的力量。🍃",
+            "自信是最好的單品，穿上它。",
+            "不趕時間的話，去看看路邊的花吧。",
+            "心懷浪漫，生活便處處是詩。",
+            "勇敢去嘗試那件你不敢穿的衣服。",
+            "給心靈放個假，今天只做自己。",
+            "生活不在別處，就在你的選擇裡。",
+            "穿得漂亮，心情也會跟著發光。🌟",
+            "每一件舊衣服，都藏著一段回憶。",
+            "簡單，有時候就是最美的層次。",
+            "去做你想做的事，去見你想見的人。",
+            "今天的你，值得所有的讚美。",
+            "擁抱變化，就像擁抱新的換季。🍂",
+            "心情晴朗的話，全世界都會亮起來。",
+            "愛自己，是終生浪漫的開始。",
+            "不管天氣如何，記得帶上自己的陽光。",
+            "今日穿搭：滿分的自信與微笑。😊"
+        ];
+
+        let quoteIndex = 0;
+        function updateMoodQuote() {
+            const display = document.getElementById('mood-quote-display');
+            const label = document.getElementById('mood-label');
+            
+            display.textContent = moodQuotes[quoteIndex];
+            display.style.color = weatherThemeColor;
+            label.style.color = weatherThemeColor;
+            label.style.opacity = "0.7";
+            
+            quoteIndex = (quoteIndex + 1) % moodQuotes.length;
+        }
+
+        setInterval(updateMoodQuote, 6000);
 
         const initAuth = async () => {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -207,6 +311,18 @@
                 await signInAnonymously(auth);
             }
         };
+
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (user) {
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clothes'), (s) => {
+                    clothes = s.docs.map(d => ({ id: d.id, ...d.data() }));
+                    render();
+                });
+                fetchWeather();
+            }
+        });
+
         initAuth();
 
         async function fetchWeather() {
@@ -216,133 +332,107 @@
                 if(data.success === "true") {
                     const el = data.records.location[0].weatherElement;
                     const wx = el.find(e => e.elementName === "Wx").time[0].parameter.parameterName;
-                    const maxT = el.find(e => e.elementName === "MaxT").time[0].parameter.parameterName;
-                    const pop = el.find(e => e.elementName === "PoP").time[0].parameter.parameterName;
-                    const temp = parseInt(maxT);
+                    const maxT = parseInt(el.find(e => e.elementName === "MaxT").time[0].parameter.parameterName);
+                    const pop = parseInt(el.find(e => e.elementName === "PoP").time[0].parameter.parameterName);
                     
-                    weather = { temp, desc: wx };
-                    document.getElementById('weather-temp').textContent = `${maxT}°C`;
-                    document.getElementById('weather-desc').textContent = wx;
-                    const rEl = document.getElementById('weather-rain');
-                    rEl.textContent = `☔ ${pop}%`; rEl.classList.remove('hidden');
-
-                    const descEl = document.getElementById('suggest-desc');
-                    const umbEl = document.getElementById('suggest-umbrella');
-                    const moodEl = document.getElementById('suggest-mood');
-
-                    descEl.textContent = `天氣${wx}，氣溫${maxT}°C。`;
-                    umbEl.textContent = parseInt(pop) > 30 ? `降雨機率 ${pop}%，出門記得帶把傘 ☔` : `不必帶傘，天氣不錯 ☀️`;
-                    
-                    // 心情庫：顏文字與 Emoji 交替
-                    const moodPhrases = [
-                        "今天也要開心喔 ✨ (๑•̀ㅂ•́)و",
-                        "充滿活力的一天 🚀 ٩(｡・ω・｡)﻿و",
-                        "享受這份寧靜 ☁️ ( ´◡` )",
-                        "注意水分補充 💧 (´･ω･`)",
-                        "又是美好的一天 ☀️ (❁´◡`❁)",
-                        "今天要加油唷 ✨ ᕦ(ò_óˇ)ᕤ",
-                        "放鬆心情出發吧 🍀 (´▽`ʃ♡ƪ)",
-                        "心情像太陽一樣閃亮亮 ☀️ ٩(๑>◡<๑)۶"
-                    ];
-                    moodEl.textContent = moodPhrases[Math.floor(Math.random()*moodPhrases.length)];
-                    
-                    updateTheme(temp);
+                    weatherData = { temp: maxT, desc: wx, pop, summary: `今日「${wx}」，最高溫約 ${maxT}°C。` };
+                    updateUIByWeather(maxT, wx, pop, weatherData.summary);
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { document.getElementById('weather-summary').textContent = "天氣獲取失敗。"; }
         }
 
-        function updateTheme(t) {
-            let bg = "#F8F9FA", acc = "#4F46E5";
-            if (t >= 30) { bg = "#FFF1F1"; acc = "#EF4444"; }
-            else if (t >= 22) { bg = "#FFF9F1"; acc = "#F59E0B"; }
-            else { bg = "#F1F9FF"; acc = "#3B82F6"; }
-            document.documentElement.style.setProperty('--bg-color', bg);
-            document.documentElement.style.setProperty('--accent-color', acc);
+        function updateUIByWeather(temp, desc, pop, summary) {
+            let bgColor = "#F8F8F8", accentColor = "#5D5FEF";
+            if (temp >= 30) { bgColor = "#FFEDED"; accentColor = "#E53E3E"; }
+            else if (temp >= 23) { bgColor = "#FFF4E5"; accentColor = "#DD6B20"; }
+            else if (temp >= 15) { bgColor = "#E6FFFA"; accentColor = "#319795"; }
+            else { bgColor = "#EBF8FF"; accentColor = "#3182CE"; }
+
+            weatherThemeColor = accentColor;
+            document.documentElement.style.setProperty('--bg-dynamic', bgColor);
+            document.documentElement.style.setProperty('--accent-dynamic', accentColor);
+            document.body.style.backgroundColor = bgColor;
+            
+            document.getElementById('weather-temp').textContent = `${temp}°C`;
+            document.getElementById('weather-desc').textContent = desc;
+            document.getElementById('weather-summary').textContent = summary;
+            document.getElementById('form-icon').style.color = accentColor;
+            document.getElementById('rec-btn').style.color = accentColor;
+            
+            const adviceEl = document.getElementById('umbrella-advice');
+            document.getElementById('weather-rain-text').textContent = `預報降雨機率 ${pop}%`;
+            adviceEl.textContent = pop >= 50 ? "建議帶傘" : pop >= 20 ? "帶傘備用" : "無需帶傘";
+            adviceEl.style.color = pop >= 50 ? "#E53E3E" : pop >= 20 ? "#3182CE" : "#38A169";
+            
+            updateMoodQuote();
+            lucide.createIcons();
         }
 
         window.updateFileName = (input) => {
-            const display = document.getElementById('file-name-display');
-            display.textContent = input.files[0] ? input.files[0].name : "點擊上傳";
-            display.className = input.files[0] ? "truncate px-3 text-indigo-600 font-bold" : "truncate px-3 text-gray-400";
+            document.getElementById('file-name-display').textContent = input.files[0] ? input.files[0].name : "選擇檔案";
         };
 
         window.addItem = async () => {
-            if (!user) return;
-            const file = document.getElementById('item-image').files[0];
-            if (!file) return showToast("請選取照片");
+            if (!user || !document.getElementById('item-image').files[0]) return showToast("請選擇照片");
             const reader = new FileReader();
             reader.onload = async (e) => {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'clothes'), {
                     category: document.getElementById('item-category').value,
                     warmth: parseInt(document.getElementById('item-warmth').value) || 0,
                     image: e.target.result,
-                    createdAt: serverTimestamp()
+                    uid: user.uid
                 });
-                showToast("衣物已成功存入衣櫃");
-                document.getElementById('item-image').value = "";
-                document.getElementById('file-name-display').textContent = "點擊上傳";
+                showToast("成功加入衣櫃 ✨");
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(document.getElementById('item-image').files[0]);
         };
 
         window.deleteItem = async (id) => {
-            if(!user) return;
-            if(confirm("確定要移除這件衣物嗎？")) {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clothes', id));
-                showToast("已移除");
-            }
+            if(confirm("移除這件衣服嗎？")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clothes', id));
         };
 
         function render() {
             const g = document.getElementById('closet-grid');
-            document.getElementById('empty-state').classList.toggle('hidden', clothes.length > 0);
-            g.innerHTML = clothes.map(i => `
-                <div class="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-sm group border border-white/50 bg-white/40">
-                    <img src="${i.image}" class="w-full h-full object-cover">
-                    <div class="absolute bottom-2 right-2 bg-black/40 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-md">保暖 ${i.warmth}</div>
-                    <button onclick="deleteItem('${i.id}')" class="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 text-red-500">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-            `).join('');
+            const empty = document.getElementById('empty-state');
+            document.getElementById('item-count').textContent = clothes.length;
+            if(clothes.length === 0) {
+                empty.classList.remove('hidden'); g.innerHTML = '';
+            } else {
+                empty.classList.add('hidden');
+                g.innerHTML = clothes.map(i => `
+                    <div class="relative group aspect-[3/4] rounded-2xl overflow-hidden bg-white/40 border border-white/40 shadow-sm">
+                        <img src="${i.image}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                             <button onclick="deleteItem('${i.id}')" class="bg-white p-2 rounded-lg text-red-500 shadow-xl"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            lucide.createIcons();
         }
 
         window.generateOutfit = (mode) => {
-            const cats = {
-                tops: clothes.filter(i => i.category === 'tops'),
-                bottoms: clothes.filter(i => i.category === 'bottoms'),
-                outer: clothes.filter(i => i.category === 'outerwear'),
-                shoes: clothes.filter(i => i.category === 'shoes')
-            };
+            if(clothes.length < 2) return showToast("衣物不足");
+            const randomPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            const tops = clothes.filter(c => c.category === 'tops');
+            const bottoms = clothes.filter(c => c.category === 'bottoms');
+            if(tops.length === 0 || bottoms.length === 0) return showToast("缺少上衣或下身");
             
-            if(cats.tops.length === 0 || cats.bottoms.length === 0) {
-                return showToast("衣櫃裡至少要有上衣和下身喔！");
-            }
-
-            const random = (arr) => arr[Math.floor(Math.random() * arr.length)];
-            let result = [random(cats.tops), random(cats.bottoms)];
-            
-            if (weather.temp < 24 && cats.outer.length > 0) result.push(random(cats.outer));
-            if (cats.shoes.length > 0) result.push(random(cats.shoes));
-            
-            document.getElementById('outfit-display').classList.remove('hidden');
-            document.getElementById('outfit-title').textContent = mode === 'smart' ? "專為您推薦" : "隨機混搭 Look";
-            document.getElementById('outfit-reason').textContent = `根據今日 ${weather.temp}°C 的天氣，我們為您挑選了這些單品。`;
-            document.getElementById('outfit-items').innerHTML = result.map(i => `
-                <div class="flex-shrink-0 w-24 h-32 md:w-32 md:h-44 rounded-2xl overflow-hidden ring-4 ring-white/10 shadow-lg">
-                    <img src="${i.image}" class="w-full h-full object-cover">
-                </div>
+            const result = [randomPick(tops), randomPick(bottoms)];
+            document.getElementById('outfit-modal').classList.remove('hidden');
+            document.getElementById('modal-desc').textContent = mode === 'recommend' ? `針對 ${weatherData.temp}°C 推薦的穿搭。` : "隨機穿搭驚喜！";
+            document.getElementById('modal-items').innerHTML = result.map(i => `
+                <div class="flex-shrink-0 w-36 h-48 rounded-3xl overflow-hidden shadow-lg border-4 border-white"><img src="${i.image}" class="w-full h-full object-cover"></div>
             `).join('');
-            document.getElementById('current-avg-val').textContent = Math.round(result.reduce((a,b)=>a+b.warmth,0)/result.length);
-            
-            window.scrollTo({ top: document.getElementById('outfit-display').offsetTop - 100, behavior: 'smooth' });
+            lucide.createIcons();
         };
+
+        window.closeModal = () => document.getElementById('outfit-modal').classList.add('hidden');
 
         function showToast(m) {
             const t = document.getElementById('toast'); 
-            t.textContent = m;
-            t.classList.remove('opacity-0'); 
-            setTimeout(() => t.classList.add('opacity-0'), 2500);
+            t.textContent = m; t.classList.remove('opacity-0'); t.classList.add('opacity-100');
+            setTimeout(() => { t.classList.add('opacity-0'); t.classList.remove('opacity-100'); }, 2000);
         }
     </script>
 </body>
