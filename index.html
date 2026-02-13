@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數位衣櫃 - 專業佈局版</title>
+    <title>數位衣櫃 - 智能演算法版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         
         :root {
-            --bg-main: #FFF5E9; /* 暖色背景 */
+            --bg-main: #FFF5E9;
             --accent-primary: #5D5FEF;
             --text-main: #333333;
         }
@@ -25,21 +25,30 @@
         .glass-card {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(10px);
-            border-radius: 32px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 40px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.02);
+            border: 1px solid rgba(255, 255, 255, 0.6);
         }
 
-        .accent-text { color: var(--accent-primary); }
         .accent-bg { background-color: var(--accent-primary); }
 
         #item-image-input { display: none; }
         
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
         input[type="range"] {
             accent-color: var(--accent-primary);
+        }
+
+        .mood-highlight {
+            color: #E67E22;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -47,249 +56,168 @@
 
     <div class="max-w-7xl mx-auto space-y-8">
         
-        <!-- Top Section: Weather & Recommendations -->
+        <!-- Top Section: Weather & Helper -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <!-- 左上：天氣整體概況 (佔比 4/12) -->
-            <div class="lg:col-span-4 glass-card p-8 flex flex-col justify-between min-h-[300px]">
-                <div>
-                    <p class="text-[12px] font-bold text-gray-400 tracking-widest uppercase mb-4">天氣整體概況</p>
-                    <h2 class="text-2xl font-bold leading-relaxed">
-                        今天「<span id="wx-desc">晴時多雲</span>」，<br>
-                        氣溫約 <span id="temp-range">22°C 至 28°C</span>，<br>
-                        體感舒適。
-                    </h2>
-                </div>
-                <div class="flex items-end justify-between">
-                    <div class="text-6xl" id="weather-icon">🌤️</div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-black opacity-40 uppercase tracking-widest">目前溫感</p>
-                        <p class="text-3xl font-black" id="current-temp">25°C</p>
+            <!-- 左側：天氣整體概況 -->
+            <div class="lg:col-span-5 glass-card p-10 flex flex-col min-h-[500px]">
+                <div class="space-y-8 flex-grow">
+                    <div class="flex justify-between items-start">
+                        <div class="flex gap-4 items-center">
+                            <div class="text-4xl filter drop-shadow-md" id="weather-icon">☀️</div>
+                            <div>
+                                <p class="text-[12px] font-bold text-gray-400 tracking-wider">天氣整體概況</p>
+                                <p class="text-[10px] text-gray-400 font-medium">即時氣象數據</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">目前溫感</p>
+                            <p class="text-3xl font-black" id="current-temp">--°C</p>
+                        </div>
                     </div>
+
+                    <div class="pt-2">
+                        <h2 class="text-2xl font-black leading-tight text-zinc-800">
+                            今天「<span id="wx-desc">讀取中...</span>」，<br>
+                            氣溫約 <span id="temp-range">--°C 至 --°C</span>，<br>
+                            <span id="comfort-text">環境數據更新中</span>
+                        </h2>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-[12px] font-bold text-gray-400 tracking-wider">雨具攜帶建議</p>
+                        <h3 class="text-xl font-black text-green-600" id="rain-advice">無需攜帶雨具</h3>
+                        <p class="text-[12px] text-gray-400 font-medium">預報降雨機率 <span id="pop-value">0%</span></p>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t border-black/5">
+                    <p class="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-3">DAILY MOOD</p>
+                    <p class="text-xl font-bold italic mood-highlight leading-relaxed" id="mood-text">
+                        正在掃描衣櫃與氣候狀況...
+                    </p>
                 </div>
             </div>
 
-            <!-- 右上：今日概況與建議 (佔比 8/12) -->
-            <div class="lg:col-span-8 glass-card p-8 flex flex-col justify-between">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- 雨具建議 -->
-                    <div class="space-y-4">
+            <!-- 右側：今日穿搭助手 -->
+            <div id="helper-card" class="lg:col-span-7 glass-card p-10 flex flex-col justify-between min-h-[500px]">
+                
+                <div id="helper-initial" class="space-y-8 h-full flex flex-col justify-center">
+                    <div class="space-y-6">
                         <div>
-                            <p class="text-[12px] font-bold text-gray-400 tracking-widest uppercase mb-2">雨具攜帶建議</p>
-                            <h3 class="text-2xl font-bold text-green-600" id="rain-advice">無需攜帶雨具</h3>
-                            <p class="text-sm text-gray-500">預報降雨機率 <span id="pop-value">0%</span></p>
-                        </div>
-                        <div class="pt-4 border-t border-black/5">
-                            <p class="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-1">DAILY MOOD</p>
-                            <p class="text-xl font-bold italic text-orange-600" id="mood-text">陽光正好，適合出門走走。 ☀️</p>
+                            <div id="current-date" class="text-indigo-500 font-black text-lg mb-2 tracking-tighter"></div>
+                            <p class="text-[14px] font-bold text-gray-400 tracking-widest uppercase mb-4">智能演算法穿搭助手</p>
+                            <h3 class="text-4xl font-black mb-4 leading-tight">為您媒合最舒適的衣物厚度</h3>
                         </div>
                     </div>
 
-                    <!-- 穿搭統計與動作 -->
-                    <div class="flex flex-col justify-between items-end">
-                        <div class="text-right w-full">
-                            <p class="text-[12px] font-bold text-gray-400 tracking-widest uppercase mb-2">衣櫥使用量</p>
-                            <div class="flex items-center justify-end gap-3 mb-1">
-                                <span id="storage-text" class="text-xs font-black">0%</span>
-                                <div class="w-32 h-1.5 bg-black/5 rounded-full overflow-hidden">
-                                    <div id="storage-bar" class="h-full accent-bg transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex gap-3 w-full justify-end">
-                            <button onclick="recommendOutfit()" class="accent-bg text-white px-6 py-4 rounded-2xl text-xs font-black flex items-center gap-2 hover:scale-105 transition-all shadow-lg">
-                                <i data-lucide="sparkles" class="w-4 h-4"></i> AI 穿搭建議
-                            </button>
-                            <button onclick="clearCloset()" class="bg-red-50 text-red-500 px-6 py-4 rounded-2xl text-xs font-black hover:bg-red-100 transition-all">
-                                清空
-                            </button>
+                    <div class="flex flex-col sm:flex-row gap-4 mt-8">
+                        <button id="btn-recommend" onclick="recommendOutfit()" class="flex-grow accent-bg text-white px-8 py-6 rounded-[24px] text-lg font-black flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-indigo-200">
+                            <i data-lucide="sparkles" class="w-6 h-6"></i> AI 智能穿搭建議
+                        </button>
+                    </div>
+                </div>
+
+                <div id="helper-result" class="hidden fade-in space-y-6 h-full flex flex-col">
+                    <div class="flex justify-between items-center">
+                        <p class="text-[14px] font-bold text-indigo-500 tracking-widest uppercase">AI 智能媒合結果</p>
+                        <button onclick="resetHelper()" class="text-sm font-bold text-gray-400 hover:text-indigo-500 flex items-center gap-2">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> 重新挑選
+                        </button>
+                    </div>
+                    
+                    <div class="flex-grow flex flex-col items-center justify-center space-y-8">
+                        <div id="outfit-display-area" class="flex justify-center gap-4 flex-wrap"></div>
+                        <div class="max-w-md w-full space-y-4">
+                            <div id="outfit-logic-text" class="text-center text-lg font-bold text-gray-600 bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100"></div>
+                            <div id="stat-bar" class="flex justify-between text-[10px] font-black text-indigo-400 uppercase tracking-widest px-4"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Section: My Closet -->
-        <div class="glass-card p-8 min-h-[600px] flex flex-col">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-black/5 pb-6">
+        <!-- 衣櫃管理區域 -->
+        <div class="glass-card p-10 min-h-[600px] flex flex-col">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 border-b border-black/5 pb-8">
                 <div>
-                    <h2 class="text-3xl font-black tracking-tight">我的衣櫃</h2>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Manage your digital collection</p>
+                    <h2 class="text-4xl font-black tracking-tight">我的衣櫃</h2>
                 </div>
                 
-                <nav class="flex bg-gray-100 p-1 rounded-2xl">
-                    <button onclick="filterItems('all')" class="filter-btn px-6 py-2 text-xs font-bold rounded-xl bg-white shadow-sm transition-all">全部</button>
-                    <button onclick="filterItems('tops')" class="filter-btn px-6 py-2 text-xs font-bold rounded-xl opacity-40 hover:opacity-100 transition-all">上衣</button>
-                    <button onclick="filterItems('bottoms')" class="filter-btn px-6 py-2 text-xs font-bold rounded-xl opacity-40 hover:opacity-100 transition-all">下身</button>
+                <nav class="flex bg-zinc-100/80 p-1.5 rounded-2xl flex-wrap gap-1">
+                    <button onclick="filterItems('all')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl bg-white shadow-sm">全部</button>
+                    <button onclick="filterItems('tops')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">上衣</button>
+                    <button onclick="filterItems('pants')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">褲子</button>
+                    <button onclick="filterItems('skirts')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">裙子</button>
+                    <button onclick="filterItems('shoes')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">鞋子</button>
+                    <button onclick="filterItems('outerwear')" class="filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40">外套</button>
                 </nav>
             </div>
 
-            <!-- Closet Grid -->
-            <div id="closet-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-6 flex-grow">
-                <!-- JS Items -->
+            <div id="closet-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 flex-grow"></div>
+            <div id="empty-hint" class="hidden py-32 flex flex-col items-center justify-center text-center opacity-10">
+                <i data-lucide="box" class="w-20 h-20"></i>
+                <p class="text-xl font-black">目前衣櫃是空的</p>
             </div>
 
-            <div id="empty-hint" class="hidden py-24 flex flex-col items-center justify-center text-center opacity-20">
-                <i data-lucide="box" class="w-16 h-16 mb-4"></i>
-                <p class="font-bold tracking-widest">目前衣櫃空空如也</p>
-            </div>
-
-            <!-- 新增衣物浮動欄位 (底部) -->
-            <div class="mt-12 pt-8 border-t border-black/5">
-                <div class="flex flex-col lg:flex-row items-end gap-6">
-                    <!-- Upload Area -->
-                    <div class="w-full lg:w-48">
-                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">衣物照片</label>
-                        <div id="drop-zone" class="aspect-square rounded-3xl border-2 border-dashed border-gray-200 bg-white/50 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-300 transition-all group" onclick="document.getElementById('item-image-input').click()">
-                            <i data-lucide="plus-circle" class="w-6 h-6 text-gray-300 group-hover:text-indigo-400 transition-colors"></i>
-                            <input type="file" id="item-image-input" accept="image/*">
-                        </div>
+            <div class="mt-12 pt-10 border-t border-black/5">
+                <div class="flex flex-col lg:flex-row items-end gap-8">
+                    <div class="w-full lg:w-40 aspect-square rounded-[32px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-50" onclick="document.getElementById('item-image-input').click()">
+                        <i data-lucide="plus" class="w-8 h-8 text-gray-300"></i>
+                        <input type="file" id="item-image-input" accept="image/*">
                     </div>
-
-                    <!-- Options -->
-                    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">分類</label>
-                            <select id="cat-select" class="w-full h-14 px-4 rounded-2xl bg-white border border-gray-100 text-sm font-bold outline-none focus:ring-2 ring-indigo-500/20">
-                                <option value="tops">上衣 (Tops)</option>
-                                <option value="bottoms">下身 (Bottoms)</option>
-                                <option value="outerwear">外套 (Outerwear)</option>
+                    <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">衣物類別</label>
+                            <select id="cat-select" class="w-full h-16 px-6 rounded-2xl bg-white border border-gray-100 font-bold outline-none focus:ring-2 focus:ring-indigo-200">
+                                <option value="tops">上衣</option>
+                                <option value="pants">褲子</option>
+                                <option value="skirts">裙子</option>
+                                <option value="shoes">鞋子</option>
+                                <option value="outerwear">外套</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">厚度/權重</label>
-                            <div class="h-14 flex items-center px-4 bg-white rounded-2xl border border-gray-100">
-                                <input type="range" id="warmth-range" min="0" max="100" value="50" class="w-full">
+                        <div class="space-y-2">
+                            <label id="warmth-label" class="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">保暖厚度: 50%</label>
+                            <div class="h-16 flex items-center px-6 bg-white rounded-2xl border border-gray-100">
+                                <input type="range" id="warmth-range" min="0" max="100" value="50" class="w-full" oninput="document.getElementById('warmth-label').textContent=`保暖厚度: ${this.value}%`">
                             </div>
                         </div>
                     </div>
-
-                    <button onclick="handleAddItem()" class="w-full lg:w-auto h-14 px-10 accent-bg text-white rounded-2xl font-black text-sm shadow-xl hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> 新增衣物
-                    </button>
+                    <button onclick="handleAddItem()" class="h-16 px-12 accent-bg text-white rounded-2xl font-black hover:brightness-110 active:scale-95 transition-all">新增衣物</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recommendation Modal -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-6 opacity-0 pointer-events-none transition-all duration-300">
-        <div class="glass-card bg-white max-w-lg w-full p-8 scale-90 transition-all duration-300" id="modal-content">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-black italic">TODAY'S LOOK</h3>
-                <button onclick="closeModal()"><i data-lucide="x" class="w-6 h-6 opacity-30"></i></button>
-            </div>
-            <div id="outfit-display" class="flex justify-center gap-4 mb-8"></div>
-            <p id="outfit-logic" class="text-center text-sm font-bold text-gray-500 bg-gray-50 p-4 rounded-2xl"></p>
-        </div>
-    </div>
-
-    <!-- Toast -->
-    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-zinc-900 text-white text-[10px] font-black rounded-full shadow-2xl opacity-0 translate-y-4 transition-all duration-300 z-[200]"></div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 bg-zinc-900 text-white text-xs font-black rounded-full shadow-2xl opacity-0 translate-y-6 transition-all duration-300 z-[200]"></div>
 
     <script>
-        const CONFIG = {
-            storageKey: 'VIRTUAL_CLOSET_V2',
-            maxImgWidth: 500,
-            localStorageLimit: 5 * 1024 * 1024
+        // --- 核心狀態 ---
+        let state = { 
+            clothes: [], 
+            weather: { temp: 24, low: 20, high: 28, desc: '讀取中', pop: 0 }, 
+            currentFilter: 'all' 
         };
 
-        let state = {
-            clothes: [],
-            weather: { temp: 25, low: 22, high: 28, desc: '晴時多雲', pop: 0 },
-            currentFilter: 'all'
-        };
-
-        const Storage = {
-            save: () => {
-                const data = JSON.stringify(state.clothes);
-                localStorage.setItem(CONFIG.storageKey, data);
-                Storage.updateUsageUI();
-            },
-            load: () => {
-                const saved = localStorage.getItem(CONFIG.storageKey);
-                if (saved) state.clothes = JSON.parse(saved);
-                Storage.updateUsageUI();
-            },
-            updateUsageUI: () => {
-                const used = new Blob([localStorage.getItem(CONFIG.storageKey) || '']).size;
-                const percent = Math.min(100, Math.round((used / CONFIG.localStorageLimit) * 100));
-                document.getElementById('storage-bar').style.width = `${percent}%`;
-                document.getElementById('storage-text').textContent = `${percent}%`;
-            }
-        };
-
-        const Weather = {
-            async fetch() {
-                try {
-                    const res = await fetch(`https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWA-6CCF2861-4317-4000-BED2-E9BACDB2DEC3&locationName=臺北市`);
-                    const json = await res.json();
-                    const el = json.records.location[0].weatherElement;
-                    
-                    const minT = el.find(e => e.elementName === "MinT").time[0].parameter.parameterName;
-                    const maxT = el.find(e => e.elementName === "MaxT").time[0].parameter.parameterName;
-                    const wx = el.find(e => e.elementName === "Wx").time[0].parameter.parameterName;
-                    const pop = el.find(e => e.elementName === "PoP").time[0].parameter.parameterName;
-
-                    state.weather = { 
-                        temp: Math.round((parseInt(minT) + parseInt(maxT))/2),
-                        low: minT, high: maxT, desc: wx, pop: pop 
-                    };
-                    this.updateUI();
-                } catch (e) {
-                    console.error(e);
-                    this.updateUI();
-                }
-            },
-            updateUI() {
-                const { temp, low, high, desc, pop } = state.weather;
-                document.getElementById('wx-desc').textContent = desc;
-                document.getElementById('temp-range').textContent = `${low}°C 至 ${high}°C`;
-                document.getElementById('current-temp').textContent = `${temp}°C`;
-                document.getElementById('pop-value').textContent = `${pop}%`;
-                
-                // 雨具與心情建議
-                const rainAdvice = document.getElementById('rain-advice');
-                const moodText = document.getElementById('mood-text');
-                const iconEl = document.getElementById('weather-icon');
-
-                if (parseInt(pop) > 30) {
-                    rainAdvice.textContent = "建議攜帶雨具";
-                    rainAdvice.classList.replace('text-green-600', 'text-blue-600');
-                    moodText.textContent = "雨天也要保持好心情。 🌧️";
-                    iconEl.textContent = '🌧️';
-                } else if (parseInt(high) > 28) {
-                    moodText.textContent = "陽光正好，適合出門走走。 ☀️";
-                    iconEl.textContent = '☀️';
-                } else {
-                    iconEl.textContent = '🌤️';
-                }
-            }
+        const categoryNames = { 
+            tops: '上衣', pants: '褲子', skirts: '裙子', shoes: '鞋子', outerwear: '外套' 
         };
 
         const Utils = {
             toast(msg) {
                 const t = document.getElementById('toast');
-                t.textContent = msg;
-                t.classList.replace('opacity-0', 'opacity-100');
-                t.classList.replace('translate-y-4', 'translate-y-0');
-                setTimeout(() => {
-                    t.classList.replace('opacity-100', 'opacity-0');
-                    t.classList.replace('translate-y-0', 'translate-y-4');
-                }, 2000);
+                t.textContent = msg; t.classList.replace('opacity-0', 'opacity-100'); t.classList.replace('translate-y-6', 'translate-y-0');
+                setTimeout(() => { t.classList.replace('opacity-100', 'opacity-0'); t.classList.replace('translate-y-0', 'translate-y-6'); }, 2000);
             },
             async compressImage(file) {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.src = e.target.result;
+                return new Promise(resolve => {
+                    const reader = new FileReader(); reader.readAsDataURL(file);
+                    reader.onload = e => {
+                        const img = new Image(); img.src = e.target.result;
                         img.onload = () => {
                             const canvas = document.createElement('canvas');
-                            const ratio = CONFIG.maxImgWidth / img.width;
-                            canvas.width = CONFIG.maxImgWidth;
-                            canvas.height = img.height * ratio;
+                            canvas.width = 400; canvas.height = (img.height / img.width) * 400;
                             canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                             resolve(canvas.toDataURL('image/jpeg', 0.7));
                         };
@@ -298,29 +226,70 @@
             }
         };
 
+        // --- 天氣模組 ---
+        async function WeatherFetch() {
+            try {
+                // 預設抓取台北市數據
+                const res = await fetch(`https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWA-6CCF2861-4317-4000-BED2-E9BACDB2DEC3&locationName=臺北市`);
+                const json = await res.json();
+                const el = json.records.location[0].weatherElement;
+                
+                const minT = parseInt(el.find(e => e.elementName === "MinT").time[0].parameter.parameterName);
+                const maxT = parseInt(el.find(e => e.elementName === "MaxT").time[0].parameter.parameterName);
+                
+                state.weather = {
+                    low: minT,
+                    high: maxT,
+                    temp: Math.round((minT + maxT) / 2), // 以均溫作為基礎體感參考
+                    desc: el.find(e => e.elementName === "Wx").time[0].parameter.parameterName,
+                    pop: el.find(e => e.elementName === "PoP").time[0].parameter.parameterName
+                };
+                UIUpdateWeather();
+            } catch(e) { 
+                console.error("Weather fetch failed", e);
+                UIUpdateWeather(); 
+            }
+        }
+
+        function UIUpdateWeather() {
+            const { low, high, desc, pop, temp } = state.weather;
+            document.getElementById('current-temp').textContent = `${temp}°C`;
+            document.getElementById('wx-desc').textContent = desc;
+            document.getElementById('temp-range').textContent = `${low}°C 至 ${high}°C`;
+            document.getElementById('pop-value').textContent = `${pop}%`;
+            document.getElementById('rain-advice').textContent = parseInt(pop) > 30 ? "建議攜帶雨具" : "無需攜帶雨具";
+            document.getElementById('weather-icon').textContent = parseInt(pop) > 30 ? '🌧️' : '☀️';
+            
+            let comfort = "體感舒適";
+            if(temp < 18) comfort = "氣溫偏涼";
+            if(temp < 14) comfort = "氣溫寒冷";
+            if(temp > 28) comfort = "氣溫炎熱";
+            document.getElementById('comfort-text').textContent = comfort;
+
+            const moodText = temp < 18 ? "冷冷的天，適合穿暖一點。 ☕" : "天氣溫和，簡約出門。 ✨";
+            document.getElementById('mood-text').textContent = moodText;
+        }
+
+        // --- 衣櫃管理 ---
         function renderCloset() {
             const container = document.getElementById('closet-container');
-            const hint = document.getElementById('empty-hint');
             const filtered = state.currentFilter === 'all' ? state.clothes : state.clothes.filter(c => c.category === state.currentFilter);
-            
             if (filtered.length === 0) { 
                 container.innerHTML = ''; 
-                hint.classList.remove('hidden'); 
+                document.getElementById('empty-hint').classList.remove('hidden'); 
                 return; 
             }
+            document.getElementById('empty-hint').classList.add('hidden');
             
-            hint.classList.add('hidden');
             container.innerHTML = filtered.map(item => `
-                <div class="group relative aspect-[3/4] bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-black/5">
+                <div class="group relative aspect-[3/4] bg-white rounded-3xl overflow-hidden shadow-sm border border-black/5">
                     <img src="${item.image}" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button onclick="deleteItem('${item.id}')" class="p-3 bg-white text-red-500 rounded-full shadow-lg hover:scale-110 transition-transform">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
+                        <button onclick="deleteItem('${item.id}')" class="p-3 bg-white text-red-500 rounded-full shadow-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
-                    <div class="absolute bottom-2 left-2 right-2 p-2 bg-white/80 backdrop-blur-md rounded-xl flex justify-between items-center">
-                        <span class="text-[9px] font-black uppercase opacity-40">${item.category}</span>
-                        <span class="text-[9px] font-black">${item.warmth}%</span>
+                    <div class="absolute bottom-2 left-2 right-2 p-2 bg-white/90 rounded-xl flex justify-between items-center text-[10px] font-bold">
+                        <span>${categoryNames[item.category]}</span>
+                        <span class="text-indigo-600">${item.warmth}%</span>
                     </div>
                 </div>
             `).join('');
@@ -329,69 +298,141 @@
 
         async function handleAddItem() {
             const input = document.getElementById('item-image-input');
-            if (!input.files[0]) return Utils.toast("請先選擇照片");
-            
-            const compressed = await Utils.compressImage(input.files[0]);
-            const newItem = {
-                id: Date.now().toString(),
-                category: document.getElementById('cat-select').value,
-                warmth: parseInt(document.getElementById('warmth-range').value),
-                image: compressed
-            };
-            
-            state.clothes.push(newItem);
-            Storage.save();
-            renderCloset();
-            input.value = '';
-            Utils.toast("已加入衣櫃");
-        }
-
-        function deleteItem(id) {
-            state.clothes = state.clothes.filter(c => c.id !== id);
-            Storage.save();
-            renderCloset();
-        }
-
-        function filterItems(type) {
-            state.currentFilter = type;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                const active = (type === 'all' && btn.textContent === '全部') || 
-                               (type === 'tops' && btn.textContent === '上衣') || 
-                               (type === 'bottoms' && btn.textContent === '下身');
-                if(active) btn.classList.add('bg-white', 'shadow-sm'), btn.classList.remove('opacity-40');
-                else btn.classList.remove('bg-white', 'shadow-sm'), btn.classList.add('opacity-40');
+            if (!input.files[0]) return Utils.toast("請先選取衣物照片");
+            const img = await Utils.compressImage(input.files[0]);
+            state.clothes.push({ 
+                id: Date.now().toString(), 
+                category: document.getElementById('cat-select').value, 
+                warmth: parseInt(document.getElementById('warmth-range').value), 
+                image: img 
             });
+            localStorage.setItem('VIRTUAL_CLOSET_V4', JSON.stringify(state.clothes));
             renderCloset();
+            Utils.toast("已收納至衣櫃");
+            input.value = "";
         }
 
+        function deleteItem(id) { 
+            state.clothes = state.clothes.filter(c => c.id !== id); 
+            localStorage.setItem('VIRTUAL_CLOSET_V4', JSON.stringify(state.clothes)); 
+            renderCloset(); 
+        }
+
+        function filterItems(type) { 
+            state.currentFilter = type; 
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const isActive = btn.getAttribute('onclick').includes(`'${type}'`);
+                btn.className = isActive ? "filter-btn px-6 py-2 text-sm font-black rounded-xl bg-white shadow-sm" : "filter-btn px-6 py-2 text-sm font-black rounded-xl opacity-40";
+            });
+            renderCloset(); 
+        }
+
+        // --- 核心推薦演算法 ---
         function recommendOutfit() {
-            const tops = state.clothes.filter(c => c.category === 'tops');
-            const bottoms = state.clothes.filter(c => c.category === 'bottoms');
-            if (!tops.length || !bottoms.length) return Utils.toast("請先新增上衣與下身");
-
-            const target = (30 - state.weather.temp) * 3;
-            const pick = (list) => list.sort((a,b) => Math.abs(a.warmth - target) - Math.abs(b.warmth - target))[0];
-            const outfit = [pick(tops), pick(bottoms)];
-
-            const display = document.getElementById('outfit-display');
-            display.innerHTML = outfit.map(i => `<div class="w-32 aspect-[3/4] rounded-2xl overflow-hidden border-4 border-white shadow-xl"><img src="${i.image}" class="w-full h-full object-cover"></div>`).join('');
-            document.getElementById('outfit-logic').textContent = `依據氣溫 ${state.weather.temp}°C，為您挑選了合適厚度的衣物。`;
+            const { temp } = state.weather;
             
-            document.getElementById('modal-overlay').classList.remove('opacity-0', 'pointer-events-none');
-            document.getElementById('modal-content').classList.remove('scale-90');
+            // 1. 計算需求保暖度 (氣溫越低，需求保暖度越高)
+            // 邏輯假設：30度以上需要10%厚度，10度以下需要90%厚度
+            let targetWarmth = Math.max(10, Math.min(90, (35 - temp) * 4));
+
+            // 2. 獲取分類衣物
+            const tops = state.clothes.filter(c => c.category === 'tops');
+            const bottoms = state.clothes.filter(c => (c.category === 'pants' || c.category === 'skirts'));
+            const outers = state.clothes.filter(c => c.category === 'outerwear');
+            const shoes = state.clothes.filter(c => c.category === 'shoes');
+
+            if (tops.length === 0 || bottoms.length === 0) {
+                return Utils.toast("衣櫃中至少需要一件上衣和一件下身衣物");
+            }
+
+            // 3. 搜尋最佳組合 (Brute Force 尋找與 targetWarmth 最接近的)
+            let bestCombo = null;
+            let minDiff = 999;
+
+            for (let t of tops) {
+                for (let b of bottoms) {
+                    // 基本組合：上衣 + 下身
+                    let baseAvg = (t.warmth + b.warmth) / 2;
+                    let comboItems = [t, b];
+                    let currentAvg = baseAvg;
+
+                    // 如果保暖度不足，嘗試加入外套
+                    if (baseAvg < targetWarmth - 10 && outers.length > 0) {
+                        // 找一件外套試試
+                        for (let o of outers) {
+                            let withOuterAvg = (t.warmth + b.warmth + o.warmth) / 3;
+                            let diff = Math.abs(withOuterAvg - targetWarmth);
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                bestCombo = { items: [t, b, o], avg: Math.round(withOuterAvg) };
+                            }
+                        }
+                    } else {
+                        // 不穿外套的情況
+                        let diff = Math.abs(baseAvg - targetWarmth);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            bestCombo = { items: comboItems, avg: Math.round(baseAvg) };
+                        }
+                    }
+                }
+            }
+
+            if (!bestCombo) return Utils.toast("找不到合適的穿搭組合");
+
+            // 4. UI 呈現
+            document.getElementById('helper-initial').classList.add('hidden');
+            document.getElementById('helper-result').classList.remove('hidden');
+            
+            const displayArea = document.getElementById('outfit-display-area');
+            const logicText = document.getElementById('outfit-logic-text');
+            const statBar = document.getElementById('stat-bar');
+
+            // 如果有鞋子，順便塞一個進去（不計入保暖度計算）
+            if (shoes.length > 0) {
+                bestCombo.items.push(shoes[0]);
+            }
+
+            displayArea.innerHTML = bestCombo.items.map(i => `
+                <div class="group relative w-24 sm:w-32 aspect-[3/4] rounded-2xl overflow-hidden border-4 border-white shadow-lg fade-in">
+                    <img src="${i.image}" class="w-full h-full object-cover">
+                    <div class="absolute bottom-1 right-1 bg-white/80 px-1.5 py-0.5 rounded text-[8px] font-black">${categoryNames[i.category]}</div>
+                </div>
+            `).join('');
+
+            logicText.innerHTML = `
+                目前體感 <span class="text-indigo-600">${temp}°C</span>，<br>
+                最舒適厚度約為 <span class="text-indigo-600">${Math.round(targetWarmth)}%</span>。<br>
+                推薦這套組合，平均厚度為 <span class="text-indigo-600">${bestCombo.avg}%</span>。
+            `;
+
+            statBar.innerHTML = `
+                <span>需求厚度: ${Math.round(targetWarmth)}%</span>
+                <span>媒合厚度: ${bestCombo.avg}%</span>
+            `;
+
+            lucide.createIcons();
         }
 
-        function closeModal() {
-            document.getElementById('modal-overlay').classList.add('opacity-0', 'pointer-events-none');
-            document.getElementById('modal-content').classList.add('scale-90');
+        function resetHelper() { 
+            document.getElementById('helper-result').classList.add('hidden'); 
+            document.getElementById('helper-initial').classList.remove('hidden'); 
         }
 
-        function clearCloset() { if(confirm("確定重置？")) { state.clothes = []; Storage.save(); renderCloset(); } }
-
-        Storage.load();
-        Weather.fetch();
-        renderCloset();
-        lucide.createIcons();
+        // --- 初始化 ---
+        window.onload = () => {
+            const saved = localStorage.getItem('VIRTUAL_CLOSET_V4');
+            if(saved) state.clothes = JSON.parse(saved);
+            
+            const now = new Date();
+            const days = ['日','一','二','三','四','五','六'];
+            document.getElementById('current-date').textContent = 
+                `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 · 星期${days[now.getDay()]}`;
+            
+            WeatherFetch();
+            renderCloset();
+            lucide.createIcons();
+        };
     </script>
 </body>
 </html>
